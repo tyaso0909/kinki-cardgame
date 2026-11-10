@@ -773,3 +773,26 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
   .bt-hand { padding-top: 14px; }
   .bt-hand .card.sel { transform: translateY(-6px) scale(1.03); }
 }
+
+/* ---------- phones: the battle never gets wider than the screen ----------
+   A full strip (10 mana pips + 山/墓/除 + a boss name) used to widen the whole grid column, cutting off the right
+   side of every row. The column is now capped and the strip squeezes its contents instead. */
+@media (max-width: 1023px) { .bt { grid-template-columns: minmax(0, 1fr); } }
+.bt-enemy, .bt-me, .bt-mid, .bt-strip, .bt-midrow { min-width: 0; }
+.bt-strip > .bt-mana, .bt-strip > .bt-counts { flex: none; }
+@media (max-width: 519px) {
+  .bt-strip { gap: 4px; padding: 0 4px; }
+  .bt-face { padding: 0 4px; gap: 6px; }
+  .bt-name { max-width: 5.5em; }
+  .bt-life { min-width: 48px; gap: 4px; }
+  .bt-life .num b { font-size: var(--fs-m); }
+  .bt-mana.many .pips { display: none; }            /* the number says it; 6+ pips don't fit */
+  .bt-mana { gap: 3px; }
+  .bt-pile, .bt-handstack { padding: 0 3px; gap: 2px; }
+  .bt-midrow { grid-template-columns: minmax(0, 1fr) minmax(96px, 1.3fr) auto; }
+}
+@media (max-width: 359px) {
+  .bt-name { max-width: 4em; font-size: var(--fs-xs); }
+  .bt-life .bar { display: none; }                   /* number only on the narrowest phones */
+  .bt-chain .clabel { display: none; }
+}

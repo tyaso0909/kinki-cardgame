@@ -47,7 +47,7 @@
     const manaPips = [];
     const showPips = p.maxMana <= 10;
     if (showPips) for (let i = 0; i < p.maxMana; i++) manaPips.push(h('i', { class: i < p.mana ? 'on' : '' }));
-    const mana = h('span', { class: 'bt-mana', 'data-p': String(pIdx), title: 'マナ' },
+    const mana = h('span', { class: 'bt-mana' + (p.maxMana > 5 ? ' many' : ''), 'data-p': String(pIdx), title: 'マナ' },
       h('span', { class: 'pips' }, manaPips),
       h('span', { class: 't-num' }, h('b', null, String(p.mana)), h('small', null, '/' + p.maxMana)));
 
