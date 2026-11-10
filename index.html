@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0f0c17">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>禁域</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%230f0c17%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23e8c56a%22%3E%E7%A6%81%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/screens.css">
+  <link rel="stylesheet" href="css/battle.css">
+  <link rel="stylesheet" href="css/run.css">
+  <link rel="stylesheet" href="css/meta.css">
+</head>
+<body>
+  <div id="loading" aria-live="polite">
+    <div class="mark">禁</div>
+    <div>読み込み中</div>
+  </div>
+  <div id="app"></div>
+
+  <!-- core -->
+  <script src="js/core/util.js"></script>
+  <script src="js/core/events.js"></script>
+  <!-- engine -->
+  <script src="js/engine/defs.js"></script>
+  <script src="js/engine/fx.js"></script>
+  <script src="js/engine/state.js"></script>
+  <script src="js/engine/rules.js"></script>
+  <script src="js/engine/actions.js"></script>
+  <script src="js/engine/play.js"></script>
+  <script src="js/engine/turn.js"></script>
+  <script src="js/engine/loop.js"></script>
+  <script src="js/engine/game.js"></script>
+  <!-- data -->
+  <script src="js/data/cards_basic.js"></script>
+  <script src="js/data/cards_accel.js"></script>
+  <script src="js/data/cards_cycle.js"></script>
+  <script src="js/data/cards_copy.js"></script>
+  <script src="js/data/cards_chain.js"></script>
+  <script src="js/data/cards_time.js"></script>
+  <script src="js/data/cards_doom.js"></script>
+  <script src="js/data/cards_generic.js"></script>
+  <script src="js/data/cards_boss.js"></script>
+  <script src="js/data/relics.js"></script>
+  <script src="js/data/_index.js"></script>
+  <script src="js/data/enemies.js"></script>
+  <script src="js/data/events.js"></script>
+  <script src="js/data/texts.js"></script>
+  <!-- ai -->
+  <script src="js/ai/chooser.js"></script>
+  <script src="js/ai/combos.js"></script>
+  <script src="js/ai/ai.js"></script>
+  <!-- run -->
+  <script src="js/run/packs.js"></script>
+  <script src="js/run/map.js"></script>
+  <script src="js/run/shop.js"></script>
+  <script src="js/run/run.js"></script>
+  <script src="js/run/rewards.js"></script>
+  <!-- meta -->
+  <script src="js/meta/save.js"></script>
+  <script src="js/meta/codex.js"></script>
+  <script src="js/meta/achievements.js"></script>
+  <script src="js/meta/depth.js"></script>
+  <script src="js/meta/festival.js"></script>
+  <script src="js/meta/records.js"></script>
+  <script src="js/meta/meta.js"></script>
+  <!-- ui -->
+  <script src="js/ui/dom.js"></script>
+  <script src="js/ui/sfx.js"></script>
+  <script src="js/ui/cardview.js"></script>
+  <script src="js/ui/battle_hud.js"></script>
+  <script src="js/ui/battle_anim.js"></script>
+  <script src="js/ui/battle_drag.js"></script>
+  <script src="js/ui/screens/_stub.js"></script>
+  <script src="js/ui/screens/title.js"></script>
+  <script src="js/ui/screens/menu.js"></script>
+  <script src="js/ui/screens/packopen.js"></script>
+  <script src="js/ui/screens/map.js"></script>
+  <script src="js/ui/screens/battle.js"></script>
+  <script src="js/ui/screens/shop.js"></script>
+  <script src="js/ui/screens/rest.js"></script>
+  <script src="js/ui/screens/event.js"></script>
+  <script src="js/ui/screens/reward.js"></script>
+  <script src="js/ui/screens/runend.js"></script>
+  <script src="js/ui/screens/codex.js"></script>
+  <script src="js/ui/screens/records.js"></script>
+  <script src="js/ui/screens/festival.js"></script>
+  <script src="js/ui/screens/settings.js"></script>
+  <script src="js/ui/app.js"></script>
+  <!-- dev only: sample cards + gallery -->
+  <script src="js/ui/demo_cards.js"></script>
+  <script src="js/ui/dev_battle.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

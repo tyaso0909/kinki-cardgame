@@ -1,0 +1,75 @@
+# Integration notes (collected from Phase 2 reports — for Phase 3/4 agents)
+
+## Data helpers (js/data/_index.js → G.Data)
+- `G.Data.idByName(name)`, `defByName`, `relicIdByName`, `cardsByLineage`, `poolForPacks()` (excludes bossOnly & rarity 'boss'), `tabooCards()`, `bossTrumps(n)`, `bossAuxCards(n)`, `relicsBy(kind)`, `validateAll()`.
+- `G.Data.runEffectsOf(relicIds)` → merged flags: `shopDiscount:0.2, hazardEarly:true, revealEnemyHand:1, healAfterBattle:4, hideHazard:true, rewardChoices:-1, noRestHeal:true, mapFog:true`.
+- **After every battle** the run must call `G.Data.restoreVault(game)` → `[playerDefIds, enemyDefIds]`; put `[0]` back into the player's deck (蒐集箱 / 盗人の手袋).
+- Relics with activated abilities (無限の巾着, 原初の炉): `G.Data.relicAbilities(game, pIdx)` / `G.Data.useRelicAbility(game, pIdx, relicId, targetUids)` — battle UI and AI must surface these (not in `game.getAbilities`).
+- Hidden relics: any relic with `hidden:true` / `category:'hidden'` (e.g. `_fx_accel_overdrive_endturn`) must never be shown in UI/codex/rewards. `enemyOnly:true` / `category:'enemy'` relics never go to the player.
+- Engine emits `reveal` event `{who, viewer, zone:'hand'|'deck', uids, defIds}`; `statuses.handRevealed` (魔封じの猫) → battle UI should show the enemy hand face-up while set.
+
+## Enemy defs (js/data/enemies.js → G.EnemyDB)
+- Bosses carry `isBoss:true, kind:'boss'`; elites `kind:'elite'`; normals `kind:'normal'`.
+- Battle UI reads: `name, kind, lineage, introText, teaches, lastWords, winText, diary, forecastText`.
+- `G.AI.enemyPlayerConfig(enemyDef, {act, depth, playerDeckIds, prevRunDeckIds})` → player config for `G.Engine.createGame`.
+
+## Battle screen (js/ui/screens/battle.js → G.ui.battle)
+- `G.ui.battle.start({game, onEnd(result), enemyDef})`; `result = {won, winner, reason, turns, stats, game}`.
+- Human is always player 0, enemy player 1.
+
+## Cards
+- `basic_01` 見習いの火球 (事故防止用). Boss aux cards: `rarity:'boss'`, tag `bossAux`, `bossOnly:false` (can be rewarded after the boss). Trumps: `bossOnly:true`.
+
+## AI (js/ai/*)
+- `G.AI.takeTurn(game, pIdx, {onStep})` awaits onStep after every action; `G.AI.checkEnrage(game, enemyIdx)` may be called by the UI after player actions. Events: `enrage {who,text}`, `theftCountdown`; `player.flags.turnsUntilTheft`; `inst.residual` (鏡の主 残り香 → dimmed border).
+- Hidden relics `relic_boss1..5_enrage` (`hidden:true`).
+- `G.Depth.modifiers(depth)` (battle side, consumed by AI) may return `{normalLifeMul, eliteLifeMul, bossLifeMul, mistakeMul, eliteRelics, bossExtraRelics, enrageThreshold}`.
+
+## Phase 3/4 contract (binding)
+
+### G.Save (owned by run agent, js/meta/save.js) — localStorage keys prefixed `kinki.`
+```
+G.Save.meta() → {
+  depth, maxDepthCleared, runsStarted, runsCleared, lineageClears:{accel:n,...},
+  codex:{cards:{defId:true}, relics:{id:true}, enemies:{id:true}, diary:{id:true}},
+  achievements:{id:isoDate}, records:{maxDamageOneTurn, maxChain, longestLoop, maxDepth, lineageUse:{}, cardUse:{}},
+  graffitiCard: defId|null, lastRunDeck:[defIds], unlockedPacks:['gold','dual','taboo'...], settings-free
+}
+G.Save.updateMeta(fn(meta) => void)   // mutate + persist
+G.Save.saveRun(runState) / loadRun() / hasRun() / clearRun()
+G.Save.settings.get()/set(patch)       // already consumed by G.ui.settings
+G.Save.wipe()
+G.Save.exportString() / importString(str)
+```
+### G.Meta hooks (owned by meta agent, js/meta/*) — run agent calls them if present
+```
+G.Meta.onRunStart({seed, packs, relic, depth, festival})
+G.Meta.onCardObtained(defId) / onRelicObtained(relicId) / onDiaryFound(diaryId)
+G.Meta.onBattleEnd(result, {enemyDef, act, run})   // result from G.ui.battle (stats: maxDamageOneTurn, maxChain, longestLoop, won, reason, mirrorBeatenBeforeReflect, ...)
+G.Meta.onRunEnd({won, run})                        // depth unlock, records, pack unlocks, lastRunDeck, achievements
+G.Depth.modifiers(depth), G.Depth.runModifiers(depth) → {normalLifeMul, eliteExtra:1, shopPriceMul:1.1, sellMul:0.9, packChoices:2, bossLifeMul, startCursedRelic:true, ...} (SPEC 深度 table)
+G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTaboo, doubleLife, allChaosPacks}} ; run accepts `festival` param and applies rules via game.options / statuses.
+```
+### Run state (owned by run agent) `G.Run` — screens in js/ui/screens/{packopen,map,shop,rest,event,reward,runend}.js
+- `G.Run.startNew({depth, festival})`, `G.Run.resume()` → returns next screen name, `G.Run.state` (JSON: act, mapNodes, position, deck[defIds], relics, gold, life, maxLife, seed, rng state, flags, history, stats).
+- Diary data: `G.Texts.diary` (owned by meta agent, js/data/texts.js) — `[{id, text, boss?:enemyId}]`, plus `G.Texts.shopLines`, `G.Texts.graffiti`, `G.Texts.loading`.
+
+## Drag-to-play (js/ui/battle_drag.js)
+- `G.ui.battleDrag.attach(frame, api)` → detach fn; battle.js builds the api (`dragApi()`), attaches in `build()`, detaches in `teardown()`.
+- Hand card dragged up and dropped above the hand → normal play flow (`commitHandCard`: X / hidden-zone picks / multi-targets open their usual UI). Single visible-target cards aim with an arrow and play on the target they are dropped on. Own monsters (and phantom stacks) dragged onto an enemy monster / face → attack. Horizontal swipes on the hand scroll it (hand cards are `touch-action:none`; the module scrolls manually). Taps and long-press detail still work.
+
+## 一斉攻撃 (battle.js)
+- Action-bar button 「一斉攻撃 ×N」 appears on the human's main phase when ≥1 monster (atk > 0) has `'face'` among its `getAttackers` targets (i.e. no enemy guard blocks the face). Tap → prompt with count and total damage (×attacksLeft) → 攻撃する runs `game.attack(0, uid, 'face')` one by one, re-reading `getAttackers` after each attack (so a guard summoned mid-volley, a win, or a 2回攻撃 monster are handled). Stops on win, when no face attacker remains, or when an attack makes no progress.
+
+## Field card layout (cardview.js / cards.css)
+- Field cards render **portrait (5:7)** like every other card everywhere (packs, hand, shop, rewards, codex, deck lists, detail). Identity: squarer corners, full-width horizon "vista" art band (fixed 2.2em, not shrunk by the text fitter), ▮ name marker.
+- The old landscape banner is opt-in: `G.ui.renderCard(def, { wide: true })` → `.type-field.wide`. Grid "span 2" special cases for fields were removed. The battle's shared field slot is a chip (`.bt-field`), not a card.
+
+## Hosting note (artifact wrapper)
+- When published, the page is wrapped by a host skeleton whose `body` rule sets `color:#000; background:#fff; font:14px system`. `css/base.css` therefore sets color, font and background on **`body`** as well as `html` — never rely on inheritance from `html` alone. Test pages that reproduce the wrapper: scratchpad `qa/_hosted_test.html` + `qa/hosted_scan.js`.
+
+## Sound effects (js/ui/sfx.js → G.ui.sfx)
+- All sounds are synthesized with Web Audio (no audio files): `G.ui.sfx.play(name)`; 44 named sounds (`G.ui.sfx.names()`). AudioContext is created on the first pointerdown/keydown (browser autoplay rules).
+- Battle: `battle.js` `drain()` calls `G.ui.sfx.battle(type, payload, game)` for every queued event, so sounds stay in sync with animations (card type → summon/spell/crest/field, damage size → hit/hitFace/bigHit, chain ticks rising in pitch + 10/50 milestones, forecast drone, hazard heartbeat, loop/overflow, enrage, win/lose).
+- App-wide: soft tap on any button; `ui.modal`/`ui.confirm` open sound; warning toasts → deny; `G.Shop` purchases/sells and reward gold → coins; `G.Run.addRelic` → relic; rest heal/remove. Pack reveals by rarity (packopen.js), run end win/lose (runend.js).
+- Settings: `sound` (default on) and `soundVol` (0.3 / 0.6 / 1). The old placeholder key `sfx` is ignored.
