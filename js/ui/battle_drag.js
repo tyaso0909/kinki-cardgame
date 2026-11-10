@@ -41,11 +41,21 @@
       return g.findCard(uid) || null;
     }
 
+    // The battle screen may re-render between our listeners (a press fast-forwards the running animation and the
+    // board is redrawn in the same event dispatch), so a card element we hold can be detached — find its live twin.
+    function live(el) {
+      if (!el) return null;
+      if (el.isConnected && frame.contains(el)) return el;
+      const uid = el.dataset && el.dataset.uid;
+      if (uid == null || uid === '') return null;
+      return frame.querySelector('.card[data-uid="' + uid + '"]');
+    }
+
     function onDown(e) {
       if (e.button !== undefined && e.button !== 0) return;
       if (drag || !api.canAct()) return;
-      const el = e.target.closest && e.target.closest('.card[data-uid]');
-      if (!el || !frame.contains(el)) return;
+      const el = live(e.target.closest && e.target.closest('.card[data-uid]'));
+      if (!el) return;
       let kind = null;
       if (el.closest('.bt-hand')) kind = 'hand';
       else if (el.closest('.bt-my-board')) kind = 'board';
@@ -63,7 +73,7 @@
       if (dist < START_PX) return;
       // hand: a mostly-horizontal swipe scrolls the hand; anything with a clear upward component starts a drag
       if (press.kind === 'hand' && !press.scroll && !(dy < 0 && -dy > Math.abs(dx) * 0.45)) {
-        const hand = press.el.closest('.bt-hand');
+        const hand = frame.querySelector('.bt-hand');
         press.scroll = { hand, left0: hand ? hand.scrollLeft : 0 };
       }
       if (press.scroll) {
@@ -73,6 +83,8 @@
         return;
       }
       const p = press; press = null;
+      p.el = live(p.el);
+      if (!p.el) return;
       startDrag(p, e);
     }
 
@@ -187,7 +199,21 @@
       drag.targets.forEach((x) => x.el.classList.toggle('drag-cand', on));
     }
 
+    // The board can be redrawn while a drag is in progress (the summon animation finishing, etc.) — re-collect
+    // the target elements when the ones we marked were replaced, or the drop would hit nothing.
+    function refreshTargets() {
+      if (drag.srcEl && !drag.srcEl.isConnected) {
+        const s = live(drag.srcEl);
+        if (s) { drag.srcEl = s; s.classList.add('drag-src'); }
+      }
+      if (!drag.targets || drag.targets.every((t) => t.el.isConnected)) return;
+      drag.targets = candidateEls();
+      drag.targets.forEach((t) => t.el.classList.add('drag-cand'));
+      if (drag.hover && !drag.hover.el.isConnected) drag.hover = null;
+    }
+
     function targetAt(x, y) {
+      refreshTargets();
       const hit = document.elementFromPoint(x, y);
       if (!hit) return null;
       const found = (drag.targets || []).find((t) => t.el === hit || t.el.contains(hit));

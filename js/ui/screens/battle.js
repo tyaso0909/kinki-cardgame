@@ -127,6 +127,7 @@
         timer = setTimeout(() => {
           timer = null;
           if (ui.battleDrag && ui.battleDrag.active()) return; // became a drag
+          if (!c.isConnected) return; // redrawn mid-press: this element no longer receives pointerup/leave
           fired = true; openDetail(c.dataset.defId, c.dataset.uid);
         }, 450);
       };
@@ -383,6 +384,14 @@
     });
   }
 
+  // Why can't this monster attack? (速攻 monsters must never be told 「出したターンは攻撃できない」)
+  function cannotAttackReason(g, inst) {
+    if (inst.attacksLeft <= 0) return 'このターンはもう攻撃した';
+    if (g.status(0, 'cannotAttack')) return 'このターンは攻撃できない効果を受けている';
+    if (inst.flags && inst.flags.cannotAttack) return '攻撃できない状態';
+    if (inst.summonedTurn === g.turn && !g.hasKeyword(inst, 'rush')) return '出したターンは攻撃できない（速攻なら攻撃できる）';
+    return '今は攻撃できない';
+  }
   // attacker: select → targets glow
   function selectAttacker(inst, cardEl) {
     const g = S.game;
@@ -396,7 +405,7 @@
     if (!entry) {
       if (S.sel && S.sel.uid === inst.uid) { clearMode(); refresh(); return; }
       const def = defOf(inst);
-      const reason = inst.attacksLeft <= 0 ? 'このターンはもう攻撃した' : inst.summonedTurn === g.turn ? '出したターンは攻撃できない' : '今は攻撃できない';
+      const reason = cannotAttackReason(g, inst);
       ui.toast(def.name + '：' + reason, { kind: 'warn' });
       openDetail(inst.defId, inst.uid);
       return;
@@ -416,7 +425,9 @@
   const WHY = { mana: 'マナが足りない', boardFull: '場がいっぱい', duplicateCrest: '同名の紋章がすでにある', cardsPerTurnLimit: 'このターンはもう使えない', sameNamePerTurnLimit: '同名カードは今ターン使えない', canPlay: '今は使えない', noGravePlay: '墓地から使えない' };
   function dragApi() {
     return {
-      canAct: () => !!(S && !S.locked && !S.busy && !S.draining && !S.enemyTurn && S.game.active === 0 && S.game.phase === 'main' && S.game.winner === null && !(S.mode && S.mode.type === 'pick')),
+      // Our own animations may still be playing (S.draining) — a press fast-forwards them (capture listener in build())
+      // and the drag goes ahead, same as taps. Otherwise a 速攻 monster dragged right after its summon did nothing.
+      canAct: () => !!(S && !S.locked && !S.busy && !S.enemyTurn && S.game.active === 0 && S.game.phase === 'main' && S.game.winner === null && !(S.mode && S.mode.type === 'pick')),
       game: () => S.game,
       playable: (uid) => S.game.getPlayable(0).find((x) => x.uid === uid) || null,
       whyNot: (inst) => {
@@ -447,7 +458,7 @@
         }
         const entry = g.getAttackers(0).find((a) => a.uid === attacker.uid);
         if (!entry) {
-          const reason = inst.attacksLeft <= 0 ? 'このターンはもう攻撃した' : inst.summonedTurn === g.turn ? '出したターンは攻撃できない' : '今は攻撃できない';
+          const reason = cannotAttackReason(g, inst);
           return { error: defOf(inst).name + '：' + reason };
         }
         const cands = entry.targets.map((t) => (t === 'face' ? g.players[1] : g.findCard(t))).filter(Boolean);
