@@ -15,7 +15,6 @@
 
   let ctx = null, master = null, noiseBuf = null;
   const lastAt = {};          // name → ms of last play (throttle)
-  let voices = 0;
   const recent = [];          // last scheduled sound names (for debugging / tests)
   const MAX_VOICES = 14;
 
@@ -23,11 +22,16 @@
   function enabled() { const s = settings(); return s.sound !== false; }
   function volume() { const s = settings(); return typeof s.soundVol === 'number' ? s.soundVol : 0.6; }
 
-  function ensure() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume().catch(() => {}); return ctx; }
+  // Browsers only let audio start inside a real user gesture. On phones that means a tap's pointerup / touchend /
+  // click — a touch *pointerdown* does not count — and iOS also suspends ("interrupted") the context when the
+  // screen locks, a call comes in or the app goes to the background. So: try to resume on every gesture, accept any
+  // non-running state, and if a context refuses to come back, replace it with a fresh one created inside a gesture.
+  let ctxBorn = 0, staleTries = 0;
+  function build() {
     const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!AC) return null;
     try { ctx = new AC(); } catch (e) { ctx = null; return null; }
+    ctxBorn = performance.now(); staleTries = 0;
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
     master = ctx.createGain();
@@ -37,12 +41,45 @@
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;  // audio texture only; not game logic
+    live.length = 0;
     return ctx;
   }
-  function unlock() { if (enabled()) ensure(); }
+  function ensure() {
+    if (ctx && ctx.state === 'closed') ctx = null;
+    if (!ctx) return build();
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    return ctx;
+  }
+  // a 1-sample silent buffer started inside the gesture fully unlocks output on iOS Safari
+  function kick() {
+    try {
+      const b = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = b; src.connect(ctx.destination); src.start(0);
+    } catch (e) { /* ignore */ }
+  }
+  function unlock(e) {
+    if (!enabled()) return;
+    // a touch pointerdown is not a user activation — wait for its pointerup / touchend / click
+    if (e && e.type === 'pointerdown' && e.pointerType && e.pointerType !== 'mouse') return;
+    const c = ensure();
+    if (!c || c.state === 'running') { staleTries = 0; return; }
+    kick();
+    // still not running a moment after a real gesture → the context is stuck (seen on iOS after an interruption)
+    setTimeout(() => {
+      if (!ctx || ctx !== c || c.state === 'running') return;
+      staleTries++;
+      if (staleTries >= 2 && performance.now() - ctxBorn > 1000) {
+        try { c.close(); } catch (err) { /* ignore */ }
+        ctx = null; // the next gesture builds a fresh one
+      }
+    }, 250);
+  }
   if (typeof document !== 'undefined') {
-    document.addEventListener('pointerdown', unlock, { capture: true, passive: true });
-    document.addEventListener('keydown', unlock, { capture: true });
+    ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach((t) =>
+      document.addEventListener(t, unlock, { capture: true, passive: true }));
+    // coming back to the tab/app: try straight away (works on desktop; phones recover on the next tap)
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx && ctx.state !== 'running' && enabled()) ctx.resume().catch(() => {}); });
   }
 
   // ------------------------------------------------------------------ voices
@@ -78,7 +115,19 @@
     src.start(t0, Math.random()); src.stop(t0 + a + d + 0.05);
     track(src);
   }
-  function track(node) { voices++; node.onended = () => { voices = Math.max(0, voices - 1); }; }
+  // Count live voices. 'ended' doesn't always arrive (e.g. iOS interrupting the context), and a counter that never
+  // comes down would mute everything for good — so a voice also stops counting after a few seconds.
+  const live = [];
+  function track(node) {
+    const v = { t: performance.now(), done: false };
+    live.push(v);
+    node.onended = () => { v.done = true; };
+  }
+  function liveVoices() {
+    const now = performance.now();
+    for (let i = live.length - 1; i >= 0; i--) if (live[i].done || now - live[i].t > 5000) live.splice(i, 1);
+    return live.length;
+  }
   const notes = (t0, freqs, step, o) => freqs.forEach((f, i) => tone(t0 + i * step, Object.assign({ f }, o)));
 
   // ------------------------------------------------------------------ the sound set
@@ -139,7 +188,7 @@
     const now = performance.now();
     const gap = THROTTLE[name] != null ? THROTTLE[name] : 30;
     if (lastAt[name] && now - lastAt[name] < gap) return;
-    if (voices > MAX_VOICES && !/win|lose|forecast|enrage|overflow|revTaboo|revLegend/.test(name)) return;
+    if (liveVoices() > MAX_VOICES && !/win|lose|forecast|enrage|overflow|revTaboo|revLegend/.test(name)) return;
     lastAt[name] = now;
     recent.push(name); if (recent.length > 60) recent.shift();
     master.gain.setTargetAtTime(volume(), ctx.currentTime, 0.01);

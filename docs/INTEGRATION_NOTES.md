@@ -74,6 +74,7 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Battle: `battle.js` `drain()` calls `G.ui.sfx.battle(type, payload, game)` for every queued event, so sounds stay in sync with animations (card type → summon/spell/crest/field, damage size → hit/hitFace/bigHit, chain ticks rising in pitch + 10/50 milestones, forecast drone, hazard heartbeat, loop/overflow, enrage, win/lose).
 - App-wide: soft tap on any button; `ui.modal`/`ui.confirm` open sound; warning toasts → deny; `G.Shop` purchases/sells and reward gold → coins; `G.Run.addRelic` → relic; rest heal/remove. Pack reveals by rarity (packopen.js), run end win/lose (runend.js).
 - Settings: `sound` (default on) and `soundVol` (0.3 / 0.6 / 1). The old placeholder key `sfx` is ignored.
+- Unlock / recovery: phones only grant audio on a tap's pointerup / touchend / click (a touch pointerdown doesn't count), and iOS suspends ("interrupted") the context on screen lock, calls or app switches. sfx.js resumes on every gesture (any non-running state), starts a 1-sample silent buffer inside the gesture (iOS), retries on returning to the tab, and replaces a context that stays stuck. Live voices are counted with a 5 s cap so a missing `ended` event can never mute everything.
 
 ## Hand scrolling & card preview (battle.js / battle_drag.js / battle.css)
 - The hand keeps its scroll position across redraws (`swap()` copies `scrollLeft`); it used to jump back to the first card after every action.
