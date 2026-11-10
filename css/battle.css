@@ -714,3 +714,62 @@ html[data-theme="light"] .ba-num { text-shadow: 0 1px 0 #fff, 0 0 10px rgba(255,
 .bt-actions .bt-allout b { font-weight: 700; color: #fff; }
 html[data-theme="light"] .bt-actions .bt-allout { color: #8f1f16; background: color-mix(in srgb, #e2574c 14%, var(--surface)); }
 html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
+
+/* ---------- hand: scrolling guide + tap preview (screens/battle.js updateHandNav / renderPeek) ---------- */
+/* our own glide (battle_drag.js) settles on card edges — CSS snapping fought the finger-following scroll */
+.bt-hand { scroll-snap-type: none; padding-bottom: 14px; }
+.bt-handnav { grid-area: hand; position: relative; pointer-events: none; z-index: 8; }
+.bt-handnav::before, .bt-handnav::after {
+  content: ""; position: absolute; top: 0; bottom: 12px; width: 34px; opacity: 0;
+  transition: opacity var(--t-fast) var(--ease); pointer-events: none;
+}
+.bt-handnav::before { left: 0; background: linear-gradient(90deg, var(--bg) 15%, transparent); }
+.bt-handnav::after { right: 0; background: linear-gradient(270deg, var(--bg) 15%, transparent); }
+.bt-handnav.can-l::before, .bt-handnav.can-r::after { opacity: .92; }
+.bt-hn-btn {
+  position: absolute; top: calc(50% - 6px); transform: translateY(-50%);
+  width: 30px; height: 46px; border-radius: 15px; z-index: 1;
+  display: grid; place-items: center;
+  font-size: 26px; line-height: 1; color: var(--ink); font-family: var(--font-body);
+  background: color-mix(in srgb, var(--surface-3) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink-faint) 55%, transparent);
+  box-shadow: 0 2px 10px rgba(0,0,0,.45);
+  opacity: 0; pointer-events: none; transition: opacity var(--t-fast) var(--ease);
+}
+.bt-hn-btn.l { left: 2px; }
+.bt-hn-btn.r { right: 2px; }
+.bt-handnav.can-l .bt-hn-btn.l, .bt-handnav.can-r .bt-hn-btn.r { opacity: 1; pointer-events: auto; }
+.bt-hn-btn:active { transform: translateY(-50%) scale(.94); }
+.bt-hn-bar {
+  position: absolute; left: calc(var(--sp-h) + 4px); right: calc(var(--sp-h) + 4px); bottom: 1px;
+  display: flex; align-items: center; gap: 8px; height: 12px;
+  font-size: 10px; color: var(--ink-faint); letter-spacing: .04em;
+}
+.bt-hn-count { white-space: nowrap; }
+.bt-hn-track { position: relative; flex: 1; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink-faint) 30%, transparent); visibility: hidden; }
+.bt-handnav.over .bt-hn-track { visibility: visible; }
+.bt-hn-thumb { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: var(--ink-dim); }
+
+.bt-peek {
+  position: fixed; z-index: 45; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  filter: drop-shadow(0 14px 30px rgba(0,0,0,.6));
+  animation: peekIn calc(160ms * var(--anim, 1)) var(--ease) both;
+  cursor: pointer;
+}
+.bt-peek .card { pointer-events: none; }
+.bt-peek .card.unplayable { filter: saturate(.65) brightness(.82); }
+.bt-peek-why {
+  margin: 0; padding: 2px 12px; border-radius: 999px;
+  background: var(--surface-3); color: var(--ink); font-size: var(--fs-s);
+  border: 1px solid color-mix(in srgb, var(--ink-faint) 50%, transparent);
+}
+@keyframes peekIn { from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.96); } to { opacity: 1; transform: translateX(-50%); } }
+@media (min-width: 1024px) {
+  .bt-hn-btn { width: 34px; height: 56px; border-radius: 17px; }
+}
+/* the selected hand card lifts a little less on phones so the hand's scroll box doesn't clip its top */
+@media (max-width: 1023px) {
+  .bt-hand { padding-top: 14px; }
+  .bt-hand .card.sel { transform: translateY(-6px) scale(1.03); }
+}

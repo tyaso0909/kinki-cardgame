@@ -29,6 +29,49 @@
   const SUPPRESS_CLICK_MS = 350;
   let activeCount = 0;   // drags in progress (any frame)
 
+  // ---------------------------------------------------------------- hand scrolling helpers
+  // Shared by the swipe (with inertia), the ‹ › buttons and the mouse wheel. The hand element can be replaced
+  // by a redraw while a glide runs, so every frame re-queries it from the battle frame.
+  function handOf(frame) { return frame && frame.querySelector('.bt-hand'); }
+  function maxScroll(hand) { return Math.max(0, hand.scrollWidth - hand.clientWidth); }
+  // nearest scroll position that puts a card's left edge at the hand's left padding (ends are exact)
+  function snapPos(hand, desired) {
+    const max = maxScroll(hand);
+    if (desired <= 4) return 0;
+    if (desired >= max - 4) return max;
+    const pad = parseFloat(getComputedStyle(hand).paddingLeft) || 0;
+    let best = desired, bd = Infinity;
+    hand.querySelectorAll(':scope > .card').forEach((c) => {
+      const pos = c.offsetLeft - pad;
+      const d = Math.abs(pos - desired);
+      if (d < bd) { bd = d; best = pos; }
+    });
+    return Math.max(0, Math.min(max, best));
+  }
+  function stopGlide(frame) { if (frame && frame.__glide) { cancelAnimationFrame(frame.__glide); frame.__glide = 0; } }
+  function glideTo(frame, desired, ms) {
+    const hand = handOf(frame);
+    if (!hand) return;
+    stopGlide(frame);
+    const from = hand.scrollLeft, to = snapPos(hand, desired);
+    if (Math.abs(to - from) < 1) { hand.scrollLeft = to; return; }
+    const t0 = performance.now(), dur = ms || 260;
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3); // ease-out
+      const hEl = handOf(frame);
+      if (hEl) hEl.scrollLeft = from + (to - from) * e;
+      frame.__glide = k < 1 ? requestAnimationFrame(step) : 0;
+    };
+    frame.__glide = requestAnimationFrame(step);
+  }
+  // page the hand by about one screenful (dir = -1 / +1)
+  function pageHand(frame, dir) {
+    const hand = handOf(frame);
+    if (!hand) return;
+    glideTo(frame, hand.scrollLeft + dir * Math.max(80, hand.clientWidth * 0.8), 320);
+  }
+
   function attach(frame, api) {
     let press = null;     // { el, inst, kind:'hand'|'board', x0, y0, pointerId }
     let drag = null;      // active drag state
@@ -53,7 +96,8 @@
 
     function onDown(e) {
       if (e.button !== undefined && e.button !== 0) return;
-      if (drag || !api.canAct()) return;
+      if (drag) return;
+      if (e.target.closest && e.target.closest('.bt-hand')) stopGlide(frame); // a touch catches a gliding hand
       const el = live(e.target.closest && e.target.closest('.card[data-uid]'));
       if (!el) return;
       let kind = null;
@@ -62,7 +106,10 @@
       if (!kind) return;
       const inst = cardInstFromEl(el);
       if (!inst) return;
-      press = { el, inst, kind, x0: e.clientX, y0: e.clientY, pointerId: e.pointerId };
+      // the hand can always be scrolled (enemy turn, animations…); playing / attacking needs our main phase
+      const scrollOnly = !api.canAct();
+      if (scrollOnly && kind !== 'hand') return;
+      press = { el, inst, kind, scrollOnly, x0: e.clientX, y0: e.clientY, pointerId: e.pointerId };
     }
 
     function onMove(e) {
@@ -73,16 +120,23 @@
       if (dist < START_PX) return;
       // hand: a mostly-horizontal swipe scrolls the hand; anything with a clear upward component starts a drag
       if (press.kind === 'hand' && !press.scroll && !(dy < 0 && -dy > Math.abs(dx) * 0.45)) {
-        const hand = frame.querySelector('.bt-hand');
-        press.scroll = { hand, left0: hand ? hand.scrollLeft : 0 };
+        stopGlide(frame);
+        press.scroll = { lastX: press.x0, samples: [{ t: performance.now(), x: press.x0 }] };
       }
       if (press.scroll) {
-        if (press.scroll.hand) press.scroll.hand.scrollLeft = press.scroll.left0 - dx;
+        // follow the finger 1:1 (re-query the hand: the battle screen may redraw it mid-swipe; its scroll is kept)
+        const hand = frame.querySelector('.bt-hand');
+        if (hand) hand.scrollLeft -= e.clientX - press.scroll.lastX;
+        press.scroll.lastX = e.clientX;
+        const s = press.scroll.samples;
+        s.push({ t: performance.now(), x: e.clientX });
+        if (s.length > 6) s.shift();
         suppressUntil = Date.now() + SUPPRESS_CLICK_MS;
         e.preventDefault();
         return;
       }
       const p = press; press = null;
+      if (p.scrollOnly) return;
       p.el = live(p.el);
       if (!p.el) return;
       startDrag(p, e);
@@ -90,7 +144,22 @@
 
     function onUp(e) {
       if (drag && e.pointerId === drag.pointerId) { e.preventDefault(); finishDrag(e.clientX, e.clientY, e.type === 'pointercancel'); return; }
-      if (press && e.pointerId === press.pointerId) { if (press.scroll) suppressUntil = Date.now() + SUPPRESS_CLICK_MS; press = null; }
+      if (press && e.pointerId === press.pointerId) {
+        if (press.scroll) {
+          suppressUntil = Date.now() + SUPPRESS_CLICK_MS;
+          // release: keep gliding with the swipe's speed, then settle with a card edge at the left
+          const s = press.scroll.samples, now = performance.now();
+          const recent = s.filter((p) => now - p.t < 90);
+          let v = 0; // px per ms, finger direction
+          if (recent.length >= 2) {
+            const a = recent[0], b = recent[recent.length - 1];
+            v = (b.x - a.x) / Math.max(8, b.t - a.t);
+          }
+          const hand = frame.querySelector('.bt-hand');
+          if (hand) glideTo(frame, hand.scrollLeft - v * 260, Math.abs(v) > 0.3 ? 380 : 200);
+        }
+        press = null;
+      }
     }
 
     // swallow the click that follows a drag so the tap flow doesn't also fire
@@ -310,14 +379,28 @@
       }
     }
 
+    // mouse wheel over the hand scrolls it sideways (PC)
+    function onWheel(e) {
+      const hand = e.target.closest && e.target.closest('.bt-hand');
+      if (!hand || maxScroll(hand) <= 0) return;
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!d) return;
+      e.preventDefault();
+      stopGlide(frame);
+      hand.scrollLeft += d * (e.deltaMode === 1 ? 32 : 1);
+    }
+
     frame.addEventListener('pointerdown', onDown);
     window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     frame.addEventListener('click', onClickCapture, true);
+    frame.addEventListener('wheel', onWheel, { passive: false });
 
     return function detach() {
       if (drag) { const gh = drag.ghost; cleanup(); if (gh) gh.remove(); drag = null; }
+      stopGlide(frame);
+      frame.removeEventListener('wheel', onWheel, { passive: false });
       frame.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
@@ -326,5 +409,5 @@
     };
   }
 
-  ui.battleDrag = { attach, active: () => activeCount > 0 };
+  ui.battleDrag = { attach, active: () => activeCount > 0, pageHand, glideTo, snapPos };
 })(globalThis.G = globalThis.G || {});

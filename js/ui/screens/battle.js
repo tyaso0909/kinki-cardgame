@@ -80,13 +80,72 @@
     swap('.bt-hand', HUD.hand(g, v));
     renderActionBar();
     attachLongPress();
+    renderPeek();
+    updateHandNav();
+  }
+
+  // ---------------------------------------------------------------- hand: scroll guide + card preview
+  // ‹ › buttons and edge fades show there are more cards that way; the bar shows which part of the hand is in view.
+  function updateHandNav() {
+    const nav = el('.bt-handnav'), hand = el('.bt-hand');
+    if (!nav || !hand) return;
+    const max = Math.max(0, hand.scrollWidth - hand.clientWidth);
+    const x = hand.scrollLeft;
+    const over = max > 2;
+    nav.classList.toggle('over', over);
+    nav.classList.toggle('can-l', over && x > 2);
+    nav.classList.toggle('can-r', over && x < max - 2);
+    const thumb = nav.querySelector('.bt-hn-thumb');
+    if (thumb && over) {
+      const w = hand.clientWidth / hand.scrollWidth;
+      thumb.style.width = (w * 100) + '%';
+      thumb.style.left = ((x / hand.scrollWidth) * 100) + '%';
+    }
+    const cnt = nav.querySelector('.bt-hn-count');
+    if (cnt) cnt.textContent = '手札 ' + S.game.players[0].hand.length + '枚';
+  }
+  function scrollHand(dir) { if (ui.battleDrag && ui.battleDrag.pageHand) ui.battleDrag.pageHand(S.root.querySelector('.bt'), dir); }
+
+  // Tapping a hand card shows it large, with its full text, right above the hand (phones can't read the small cards).
+  function removePeek() { document.querySelectorAll('.bt-peek').forEach((x) => x.remove()); }
+  function renderPeek() {
+    removePeek();
+    if (!S || !S.sel || S.sel.kind !== 'hand' || S.mode) return;
+    const g = S.game;
+    const inst = g.findCard(S.sel.uid);
+    if (!inst || (inst.zone !== 'hand' && inst.zone !== 'grave')) return;
+    const frame = S.root.querySelector('.bt');
+    const top = el('.bt-enemy-board') ? el('.bt-enemy-board').getBoundingClientRect().top : 60;
+    const roomAbove = (x) => x.getBoundingClientRect().top - Math.max(8, top) - 16;
+    // sit above my life strip when there is room (so it doesn't hide it), else just above the prompt bar / hand
+    const strip = el('.bt-my-strip');
+    let anchor = strip && roomAbove(strip) >= 190 * 1.4 ? strip : null;
+    if (!anchor) anchor = [el('.bt-prompt'), el('.bt-hand')].find((x) => x && !x.hidden && x.getBoundingClientRect().height > 0);
+    if (!frame || !anchor) return;
+    const ar = anchor.getBoundingClientRect();
+    const room = roomAbove(anchor);
+    const handR = el('.bt-hand').getBoundingClientRect();
+    const cw = Math.max(150, Math.min(S.desktop ? 250 : 230, (room - (S.sel.pl ? 0 : 26)) / 1.4, window.innerWidth - 32));
+    const pl = S.sel.pl;
+    const card = ui.renderCard(inst, { size: 'l', cost: pl ? pl.cost : undefined });
+    card.style.setProperty('--cw', Math.round(cw) + 'px');
+    card.classList.add(pl ? 'playable' : 'unplayable');
+    const why = pl ? null : h('p', { class: 'bt-peek-why' }, S.sel.why || '今は使えない');
+    const peek = h('div', { class: 'bt-peek', role: 'dialog', 'aria-label': defOf(inst).name + 'の詳細' }, card, why);
+    peek.style.bottom = Math.round(window.innerHeight - ar.top + 8) + 'px';
+    peek.style.left = Math.round(handR.left + handR.width / 2) + 'px';
+    // tap the preview to put it away (buttons stay in the prompt bar)
+    peek.addEventListener('click', () => { clearMode(); refresh(); });
+    document.body.appendChild(peek);
   }
   function swap(sel, node) {
     const old = el(sel);
     if (!old) return;
     const keepClass = sel.slice(1);
     node.classList.add(keepClass);
+    const keepScroll = old.scrollLeft; // the hand keeps where the player scrolled it (it used to jump back to the start)
     old.replaceWith(node);
+    if (keepScroll) node.scrollLeft = keepScroll;
   }
   function safe(fn, dflt) { try { return fn(); } catch (e) { console.error(e); return dflt; } }
 
@@ -149,6 +208,7 @@
 
   // ---------------------------------------------------------------- selection / modes
   function clearMode() {
+    removePeek();
     S.sel = null;
     S.hl = new Set();
     S.mode = null;
@@ -280,8 +340,12 @@
     if (!pl) {
       const legal = safe(() => g.canPlayCard(0, inst), { ok: false, reason: '' });
       const why = { mana: 'マナが足りない', boardFull: '場がいっぱい', duplicateCrest: '同名の紋章がすでにある', cardsPerTurnLimit: 'このターンはもう使えない', sameNamePerTurnLimit: '同名カードは今ターン使えない', canPlay: '今は使えない', noGravePlay: '墓地から使えない' };
-      ui.toast(def.name + '：' + (why[legal.reason] || '今は使えない'), { kind: 'warn' });
-      S.sel = { uid: inst.uid, kind: 'hand' };
+      const whyText = why[legal.reason] || '今は使えない';
+      S.sel = { uid: inst.uid, kind: 'hand', why: whyText };
+      setPrompt(def.name + '：' + whyText, [
+        { label: '詳細', cls: '', onClick: () => openDetail(inst.defId, inst.uid) },
+        { label: '閉じる', cls: 'ghost', onClick: () => { clearMode(); refresh(); } },
+      ]);
       refresh();
       return;
     }
@@ -957,6 +1021,8 @@
     if (S.game.players[0].chooser === S.chooser) S.game.players[0].chooser = S.prevChooser || G.Engine.defaultChooser;
     if (S.mq) S.mq.removeEventListener('change', S.onMq);
     try { if (S.detachDrag) S.detachDrag(); } catch (e) { /* ignore */ }
+    if (S.onResize) window.removeEventListener('resize', S.onResize);
+    removePeek();
     S = null;
   }
 
@@ -972,6 +1038,10 @@
         h('div', { class: 'bt-my-board' }), h('div', { class: 'bt-my-zones' }), h('div', { class: 'bt-my-strip' })),
       h('div', { class: 'bt-prompt', hidden: true }),
       h('div', { class: 'bt-hand' }),
+      h('div', { class: 'bt-handnav' },
+        h('button', { class: 'bt-hn-btn l', type: 'button', 'aria-label': '手札を左へ', onClick: () => scrollHand(-1) }, '‹'),
+        h('button', { class: 'bt-hn-btn r', type: 'button', 'aria-label': '手札を右へ', onClick: () => scrollHand(1) }, '›'),
+        h('div', { class: 'bt-hn-bar' }, h('span', { class: 'bt-hn-count' }), h('span', { class: 'bt-hn-track' }, h('i', { class: 'bt-hn-thumb' })))),
       h('div', { class: 'bt-actions' }),
       h('aside', { class: 'bt-log' },
         h('div', { class: 'bt-loghead' }, h('span', null, '戦闘ログ'), h('button', { class: 'btn-icon', type: 'button', 'aria-label': '閉じる', onClick: () => toggleLog(false) }, ui.icon('close'))),
@@ -986,6 +1056,10 @@
         G.Save.updateMeta((m) => { m.hints = Object.assign({}, m.hints, { drag: true }); });
       }
     } catch (e) { /* hints are optional */ }
+    // hand scroll guide follows the hand (scroll events don't bubble — listen in the capture phase)
+    frame.addEventListener('scroll', (e) => { if (e.target && e.target.classList && e.target.classList.contains('bt-hand')) updateHandNav(); }, true);
+    S.onResize = () => { if (S) { updateHandNav(); renderPeek(); } };
+    window.addEventListener('resize', S.onResize);
     // tap anywhere during enemy sequences → fast-forward
     frame.addEventListener('pointerdown', () => { if (S && (S.enemyTurn || S.draining) && S.anim) { S.anim.fast = true; S.anim.skip(); } }, true);
   }
