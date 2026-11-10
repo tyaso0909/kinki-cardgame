@@ -18,9 +18,9 @@
   G.RunCommon.depthMods = function (depth) {
     depth = depth || 0;
     const base = {
-      normalLifeMul: depth >= 1 ? 1.1 : 1, eliteExtra: depth >= 2 ? 1 : 0,
+      normalLifeMul: depth >= 1 ? 1.25 : 1, eliteExtra: depth >= 2 ? 1 : 0,
       shopPriceMul: depth >= 3 ? 1.1 : 1, sellMul: depth >= 3 ? 0.9 : 1,
-      packChoices: depth >= 4 ? 2 : 3, bossLifeMul: depth >= 5 ? 1.15 : 1,
+      packChoices: depth >= 4 ? 2 : 3, bossLifeMul: depth >= 5 ? 1.5 : 1,
       startCursedRelic: depth >= 6, mistakeMul: depth >= 7 ? 0.5 : 1,
       eliteRelics: depth >= 8 ? 2 : 1, enrageThreshold: depth >= 9 ? 0.65 : null, bossExtraRelics: depth >= 10 ? 1 : 0
     };
