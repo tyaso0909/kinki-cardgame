@@ -49,9 +49,10 @@
     // crown with chain
     boss: `<path d="M4 17l-1.5-9 5 3.5L12 5l4.5 6.5 5-3.5L20 17z" ${S}/><path d="M5 20.5h14" ${S}/><circle cx="8" cy="20.5" r="1.2" fill="currentColor"/><circle cx="12" cy="20.5" r="1.2" fill="currentColor"/><circle cx="16" cy="20.5" r="1.2" fill="currentColor"/>`,
   };
-  // type-specific art silhouettes
+  // type-specific art silhouettes — one icon per card type (the lineage shows in the frame colour and the corner mark)
   const TYPE_ART = {
-    monster: null, // uses lineage glyph
+    // horned beast head
+    monster: `<path d="M6.5 3.5l1.8 4.2M17.5 3.5l-1.8 4.2" ${S}/><path d="M12 6.5c-3.4 0-5.6 1.3-5.6 3.6 0 1 .3 2.2.6 3.2.7 2.6 1.6 5.2 5 6.7 3.4-1.5 4.3-4.1 5-6.7.3-1 .6-2.2.6-3.2 0-2.3-2.2-3.6-5.6-3.6z" ${S}/><path d="M8.9 11.6l1.9.8M15.1 11.6l-1.9.8" ${S}/><path d="M10.4 16.2l.8 1.2.8-1 .8 1 .8-1.2" ${S}/>`,
     spell: `<path d="M5 6.5c0-1.4 1.1-2.5 2.5-2.5H19v13H7.5A2.5 2.5 0 0 0 5 19.5z" ${S}/><path d="M5 6.5c0 1.4 1.1 2.5 2.5 2.5H19M8 13h7" ${S}/>`,
     crest: `<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" ${S}/>`,
     field: `<path d="M3 17c3-2 6-2 9 0s6 2 9 0M3 12c3-2 6-2 9 0s6 2 9 0M3 7c3-2 6-2 9 0s6 2 9 0" ${S}/>`,
