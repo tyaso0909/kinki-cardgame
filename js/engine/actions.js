@@ -887,7 +887,8 @@
     const count = spec.count || 1;
     if (!cands.length) return spec.kind === 'player' ? null : [];
     let result;
-    if (cands.length <= count && !spec.optional && !spec.upTo && spec.kind !== 'player') result = cands.slice();
+    // spec.alwaysAsk: let the player choose even when the candidates exactly fill the count (禁忌召喚)
+    if (cands.length <= count && !spec.optional && !spec.upTo && !spec.alwaysAsk && spec.kind !== 'player') result = cands.slice();
     else {
       const chooser = chooserOwner.chooser || Game.defaultChooser;
       g.pendingChoice = { who: chooserOwner.idx, spec: spec, candidates: cands.map(function (c) { return c.uid !== undefined ? c.uid : 'p' + c.idx; }) };

@@ -45,11 +45,12 @@
         const g = ctx.game;
         const lin = G.ui && G.ui.labels && G.ui.labels.LINEAGE[lineage] ? G.ui.labels.LINEAGE[lineage].name : lineage;
         const picked = await ctx.pick({
-          kind: 'monster', side: 'any', count: TABOO_COST, ignoreWard: true,
+          kind: 'monster', side: 'any', count: TABOO_COST, ignoreWard: true, alwaysAsk: true, cancelable: true,
           filter: function (c2, m) { return defOf(m).lineage === lineage; },
           prompt: '破壊する' + lin + 'のモンスターを' + TABOO_COST + '体選ぶ（相手のモンスター・幻影も選べる）'
         });
-        if (picked.length < TABOO_COST) { ctx.log('破壊するモンスターが足りない'); return; }
+        // cancelled / not enough chosen: nothing happens and the once-per-turn use is given back
+        if (picked.length < TABOO_COST) { ctx.card.flags.abilityUsedTurn = null; ctx.log('禁忌召喚をやめた'); return; }
         for (let i = 0; i < picked.length; i++) if (g.isInPlay(picked[i])) await ctx.destroy(picked[i], { source: ctx.card });
         if (g.winner !== null) return;
         if (ctx.me.board.length >= ctx.status(ctx.me, 'maxBoard')) { ctx.log('場がいっぱいで出せない'); return; }

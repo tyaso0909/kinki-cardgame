@@ -216,7 +216,7 @@
   }
   function enterTargetMode(candidates, prompt, onPick, opts) {
     opts = opts || {};
-    S.mode = { type: 'target', cands: candidates, onPick, picked: [], count: opts.count || 1, upTo: !!opts.upTo, optional: !!opts.optional };
+    S.mode = { type: 'target', cands: candidates, onPick, picked: [], count: opts.count || 1, upTo: !!opts.upTo, optional: !!opts.optional, promptBase: prompt };
     S.hl = new Set(candidates.map((c) => (c.uid != null ? c.uid : 'face' + c.idx)));
     const btns = [];
     if (opts.upTo || opts.optional) btns.push({ label: opts.upTo ? '決定' : 'このまま', cls: 'primary', onClick: () => finishTarget() });
@@ -234,7 +234,7 @@
     if (i >= 0) { m.picked.splice(i, 1); refresh(); return true; }
     m.picked.push(target);
     if (m.picked.length >= m.count) finishTarget();
-    else { setPrompt((m.promptBase || '対象を選ぶ') + '（' + m.picked.length + '/' + m.count + '）', [{ label: '決定', cls: 'primary', onClick: finishTarget }, { label: 'やめる', cls: 'ghost', onClick: () => { clearMode(); refresh(); } }]); refresh(); }
+    else { setPrompt((m.promptBase || '対象を選ぶ') + '（' + m.picked.length + '/' + m.count + '）', [{ label: '決定', cls: 'primary', onClick: finishTarget }, { label: 'やめる', cls: 'ghost', onClick: () => { const mm = S.mode; clearMode(); refresh(); if (mm && mm.onCancel) mm.onCancel(); } }]); refresh(); }
     return true;
   }
   function finishTarget() {
@@ -952,7 +952,7 @@
     const visible = cands.every((c) => c.zone === 'board' || c.zone === 'phantoms' || c.zone === 'crests' || c.zone === 'field' || c.zone === 'timed');
     if (visible && cands.length) {
       const picked = await new Promise((res) => {
-        enterTargetMode(cands, spec.prompt || '対象を選ぶ', (p) => res(p), { count: spec.count || 1, upTo: spec.upTo, optional: spec.optional, cancelable: !!spec.optional, onCancel: () => res([]) });
+        enterTargetMode(cands, spec.prompt || '対象を選ぶ', (p) => res(p), { count: spec.count || 1, upTo: spec.upTo, optional: spec.optional, cancelable: !!(spec.optional || spec.cancelable), onCancel: () => res([]) });
         S.mode.promptBase = spec.prompt || '対象を選ぶ';
       });
       return picked;
