@@ -89,6 +89,19 @@
     }
   });
 
+  test('run: 1パック目の候補に妨害パックは出ない（2パック目以降は出る）', () => {
+    let laterDisrupt = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      G.Save.clearRun();
+      G.Run.startNew({ seed: seed, depth: 0 });
+      ok(G.Run.packOffer().indexOf('disrupt') < 0, 'first offer seed ' + seed);
+      G.Run.openChosenPack(G.Run.packOffer()[0]);
+      if (G.Run.packOffer().indexOf('disrupt') >= 0) laterDisrupt++;
+      G.Run.abandon();
+    }
+    ok(laterDisrupt > 0, 'disrupt still offered from the 2nd pick');
+  });
+
   test('packs: starter relic offer is biased toward opened lineages', () => {
     const rng = new G.RNG(2);
     const offer = G.Packs.starterRelicOffer(['accel', 'accel', 'accel', 'cycle', 'cycle', 'disrupt'], rng);

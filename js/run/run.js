@@ -82,7 +82,7 @@
       if (taboo.length) st.deck.push(R.pick(taboo).id);
     }
     if (festival && festival.rules && festival.rules.doubleLife) { st.maxLife = maxLife * 2; st.life = st.maxLife; }
-    st.packopen.offer = G.Packs.offer(R, { count: mods.packChoices || 3, meta: m, festival: festival });
+    st.packopen.offer = G.Packs.offer(R, { count: mods.packChoices || 3, meta: m, festival: festival, exclude: ['disrupt'] });   // 1パック目に妨害パックは出さない
     try { if (G.Save) G.Save.updateMeta(function (mm) { mm.runsStarted = (mm.runsStarted || 0) + 1; }); } catch (e) { /* ignore */ }
     Run.save();
     return 'packopen';

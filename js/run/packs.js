@@ -6,7 +6,7 @@
   //   G.Packs.TYPES / G.Packs.def(type) / G.Packs.available(meta, festival) → [types]
   //   G.Packs.rollRarity(rng) → 'rare'|'legend'|'taboo'  (85/14/1)
   //   G.Packs.openPack(type, rng, opts) → [defIds×5]   (opts.guaranteeFinisher)
-  //   G.Packs.offer(rng, {count, festival, meta}) → [types]  (the 3 (or 2) packs shown)
+  //   G.Packs.offer(rng, {count, festival, meta, exclude}) → [types]  (the 3 (or 2) packs shown; the first pick excludes 'disrupt')
   //   G.Packs.starterRelicOffer(openedTypes, rng) → [relicIds×3]
   //   G.Packs.price(type) — SPEC 価格の目安 (unlockable packs: see docs/DEVIATIONS.md Run)
   // ---------------------------------------------------------------
@@ -123,7 +123,12 @@
   // The packs shown for one choice (3 by default; depth 4+ → 2; festival allChaosPacks → ['chaos']).
   function offer(rng, opts) {
     opts = opts || {};
-    const types = available(opts.meta, opts.festival);
+    let types = available(opts.meta, opts.festival);
+    // opts.exclude: pack types never shown in this choice (the run's first pick hides 妨害パック)
+    if (opts.exclude && opts.exclude.length) {
+      const kept = types.filter(function (t) { return opts.exclude.indexOf(t) < 0; });
+      if (kept.length) types = kept;
+    }
     if (types.length === 1) return types.slice();
     const n = Math.max(1, Math.min(opts.count || 3, types.length));
     return rng.shuffle(types.slice()).slice(0, n);
