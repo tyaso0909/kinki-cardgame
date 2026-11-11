@@ -23,12 +23,13 @@
     monsters: ['accel_26', 'accel_27', 'accel_28', 'cycle_26', 'cycle_27', 'copy_26', 'copy_27', 'chain_26', 'chain_27', 'time_26', 'time_27', 'doom_26', 'doom_27', 'doom_28', 'gen_31', 'gen_32', 'gen_33'],
     buffs: ['gen_34', 'gen_35', 'accel_29', 'chain_28', 'copy_28', 'cycle_28', 'time_28', 'doom_30', 'gen_40'],
     debuffs: ['gen_36', 'gen_37', 'gen_38', 'time_29', 'chain_29', 'doom_29', 'copy_29', 'gen_39'],
-    mana: ['accel_30', 'accel_31', 'accel_32', 'accel_33', 'cycle_29', 'time_30', 'chain_30', 'doom_31', 'copy_30', 'gen_41', 'gen_42']
+    mana: ['accel_30', 'accel_31', 'accel_32', 'accel_33', 'cycle_29', 'time_30', 'chain_30', 'doom_31', 'copy_30', 'gen_41', 'gen_42'],
+    combo: ['accel_34', 'accel_35', 'cycle_30', 'chain_31', 'copy_31', 'time_31', 'doom_32', 'gen_43']
   };
 
-  test('ext: 45 cards registered, in the pack pool, names unique', function () {
-    const all = [].concat(IDS.monsters, IDS.buffs, IDS.debuffs, IDS.mana);
-    eq(all.length, 45);
+  test('ext: 53 cards registered, in the pack pool, names unique', function () {
+    const all = [].concat(IDS.monsters, IDS.buffs, IDS.debuffs, IDS.mana, IDS.combo);
+    eq(all.length, 53);
     const pool = G.Data.poolForPacks().map(function (d) { return d.id; });
     all.forEach(function (id) { ok(DB.has(id), id); ok(pool.indexOf(id) >= 0, id + ' in pool'); ok(G.Data.isProjectCard(DB.get(id)), id + ' project card'); });
     IDS.monsters.forEach(function (id) { eq(DB.get(id).type, 'monster', id); });
@@ -298,5 +299,103 @@
     await g.endTurn(0); await g.endTurn(1);
     eq(p.maxMana, mm + 4 + 3, '未来の器 fired (+3)');
     eq(g.atkOf(giant), p.maxMana, 'giant tracks max mana');
+  });
+
+  // ---------------------------------------------------------------- 突進・朧・軽いコンボ用の切り札
+  test('keyword 突進: summon turn → monsters only (no face); next turn anything', async function () {
+    const g = await T.sandbox({ p0: { hand: ['gen_43', 'gen_43'], mana: 10, deck: filler(5) }, p1: { board: ['tx_vanilla'], deck: filler(5) } });
+    await play(g, 0, 'gen_43');
+    const imp = g.players[0].board[0];
+    ok(g.canAttackWith(0, imp), 'can attack on its first turn');
+    const tg = g.getAttackers(0)[0].targets;
+    ok(tg.indexOf('face') < 0, 'not the face'); ok(tg.indexOf(g.players[1].board[0].uid) >= 0, 'monsters ok');
+    const r = await g.attack(0, imp.uid, 'face');
+    ok(!r.ok, 'face refused');
+    // no enemy monsters → cannot attack at all on the first turn
+    const g2 = await T.sandbox({ p0: { hand: ['gen_43'], mana: 10, deck: filler(5) }, p1: { deck: filler(5) } });
+    await play(g2, 0, 'gen_43');
+    ok(!g2.canAttackWith(0, g2.players[0].board[0]));
+    await g2.endTurn(0); await g2.endTurn(1);
+    ok(g2.getAttackers(0)[0].targets.indexOf('face') >= 0, 'next turn: face is fine');
+  });
+
+  test('小鬼の爆弾魔: 突進 into a monster, dies, 2 to the player and every enemy monster', async function () {
+    const g = await T.sandbox({ p0: { hand: ['gen_43'], mana: 10, deck: filler(5) }, p1: { board: ['tx_vanilla', { id: 'tx_vanilla', hp: 2 }], deck: filler(5) } });
+    await play(g, 0, 'gen_43');
+    await g.attack(0, g.players[0].board[0].uid, g.players[1].board[0].uid);
+    eq(g.players[0].board.length, 0, 'bomber died (2/1 vs 2/3)');
+    eq(g.players[1].life, 38);
+    eq(g.players[1].board.length, 0, '2+2 kills the 2/3, 2 kills the 2/2');
+  });
+
+  test('朧: 群れ火の蜥蜴 adds a 朧 copy to the deck and deals 3; 朧 cards never return to the run deck', async function () {
+    const g = await T.sandbox({ p0: { hand: ['accel_34'], mana: 10, deck: filler(5) }, p1: { deck: filler(5) } });
+    await play(g, 0, 'accel_34');
+    eq(g.players[1].life, 37);
+    const ob = g.players[0].deck.filter(function (c) { return c.oboro; });
+    eq(ob.length, 1); eq(ob[0].defId, 'accel_34'); ok(!ob[0].isCopy, 'plays like a normal card');
+    // an enemy steals it into its vault: it must not come back to the player's run deck
+    await g.makeCtx(1, null).vaultSteal(ob[0], g.players[1]);
+    const back = G.Data.restoreVault(g)[0];
+    ok(back.indexOf('accel_34') < 0, '朧 is not restored after the battle');
+    // a 朧 monster goes to the grave like any card (grave synergies see it)
+    const g2 = await T.sandbox({ p0: { hand: ['accel_34'], mana: 10, deck: [] }, p1: { deck: filler(5) } });
+    await play(g2, 0, 'accel_34');
+    const copy = g2.players[0].deck[0];
+    await g2.makeCtx(0, null).draw(1);
+    await play(g2, 0, 'accel_34');
+    const fromOboro = g2.players[0].board.find(function (m) { return m.uid === copy.uid; });
+    await g2.makeCtx(0, null).destroy(fromOboro);
+    ok(g2.players[0].grave.indexOf(fromOboro) >= 0, 'in the grave');
+  });
+
+  test('火種の子竜: +1 mana, 朧 copy in hand costing 1 more each time', async function () {
+    const g = await T.sandbox({ p0: { hand: ['accel_35'], mana: 3, deck: filler(5) } });
+    await play(g, 0, 'accel_35');
+    eq(g.players[0].mana, 4);
+    const c1 = byDef(g.players[0].hand, 'accel_35');
+    ok(c1 && c1.oboro); eq(g.costOf(0, c1), 1);
+    await play(g, 0, 'accel_35');
+    eq(g.players[0].mana, 4);
+    eq(g.costOf(0, byDef(g.players[0].hand, 'accel_35')), 2);
+  });
+
+  test('写本喰いの紙魚: draws its own 朧 copy; with 大図書館の司書長 it keeps going', async function () {
+    const g = await T.sandbox({ p0: { hand: ['cycle_30'], board: ['cycle_14'], mana: 1, deck: filler(5) } });
+    await play(g, 0, 'cycle_30');
+    const c = byDef(g.players[0].hand, 'cycle_30');
+    ok(c && c.oboro, 'drew the copy'); eq(g.players[0].mana, 1, '司書長 paid it back');
+    eq(g.players[0].deck.length, 5);
+  });
+
+  test('雷の申し子: chain +2; at 10+ deals the chain', async function () {
+    const g = await T.sandbox({ p0: { hand: ['chain_31', 'chain_31'], mana: 10, deck: filler(5) } });
+    await play(g, 0, 'chain_31');
+    eq(g.players[1].life, 40);
+    g.players[0].chain = 8;
+    await play(g, 0, 'chain_31');
+    ok(g.players[0].chain >= 10); eq(g.players[1].life, 40 - g.players[0].chain);
+  });
+
+  test('鏡の雛: two phantoms; every 雛 on the board pings when a phantom appears', async function () {
+    const g = await T.sandbox({ p0: { hand: ['copy_31'], mana: 10, deck: filler(5) } });
+    await play(g, 0, 'copy_31');
+    eq(g.players[0].phantoms.length, 2);
+    eq(g.players[1].life, 40 - (2 + 3), 'phantom 1: chick + itself; phantom 2: chick + 2 phantoms');
+  });
+
+  test('砂粒の妖精: ticks my timed cards; 2 damage per card it fired', async function () {
+    const g = await T.sandbox({ p0: { hand: ['time_31'], timed: [{ id: 'time_08', count: 2 }, { id: 'time_08', count: 2 }, { id: 'time_08', count: 4 }], mana: 10, deck: filler(8) } });
+    // (the sandbox's turn start already ticked every count once → 1, 1, 3)
+    await play(g, 0, 'time_31');
+    eq(g.players[0].timed.length, 1); eq(g.players[0].timed[0].timedCount, 2);
+    eq(g.players[1].life, 36);
+  });
+
+  test('骨鳴らし: dies → two 朧 copies into the deck and curse 2', async function () {
+    const g = await T.sandbox({ p0: { board: ['doom_32'], deck: filler(3) } });
+    await g.makeCtx(0, null).destroy(g.players[0].board[0]);
+    eq(g.players[0].deck.filter(function (c) { return c.oboro && c.defId === 'doom_32'; }).length, 2);
+    eq(g.players[1].curse, 2);
   });
 })(globalThis.G = globalThis.G || {});

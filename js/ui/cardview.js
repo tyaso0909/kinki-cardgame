@@ -95,7 +95,13 @@
     { id: 'untouchable', name: '不可侵', rule: '攻撃されない' },
     { id: 'double', name: '連撃', rule: '1ターンに2回攻撃できる' },
     { id: 'pierce', name: '貫通', rule: 'モンスターを攻撃して倒したとき、余ったダメージを相手のライフに与える' },
+    { id: 'charge', name: '突進', rule: '出したターンでも、モンスターにだけ攻撃できる（相手のライフは狙えない）' },
   ];
+  // Terms explained in the card detail when the rules text uses them (or the card itself is one).
+  const TERMS = [
+    { word: '朧', rule: 'この戦闘のあいだだけのカード。戦闘が終わると消え、デッキには残らない' },
+  ];
+  ui.TERMS = TERMS;
   ui.KEYWORDS = KEYWORDS;
   function keywordChips(def, inst) {
     const chips = [];
@@ -106,11 +112,12 @@
     if (def.timed != null && def.timed !== false) chips.push(['時限' + def.timed, '']);
     if (def.key != null) chips.push([def.key === 'wild' ? '鍵・万能' : '鍵', 'kw-key']);
     if (def.bossOnly || def.rarity === 'boss') chips.push(['切り札', '']);
+    if (inst && inst.oboro) chips.push(['朧', 'kw-oboro']);
     return chips.map(([t, c]) => h('span', { class: 'kw ' + c }, t));
   }
 
   // Rules text: emphasise trigger words so the eye finds the shape of the effect.
-  const EMPH = /(召喚時|破壊時|常在|展開時|予約|再演|時限\d+|追加ターン|呪詛|幻影|連鎖数|除外|封印ゾーン)/g;
+  const EMPH = /(召喚時|破壊時|常在|展開時|予約|再演|時限\d+|追加ターン|呪詛|幻影|連鎖数|除外|封印ゾーン|朧)/g;
   function textNodes(text) {
     const out = [];
     let last = 0;
@@ -200,6 +207,7 @@
     if (def.type === 'field' && opts.wide) cls.push('wide');   // banner layout only when explicitly asked for
     if (inst && inst.isPhantom) cls.push('phantom');
     if (inst && inst.exhausted) cls.push('exhausted');
+    if (inst && inst.oboro) cls.push('oboro');      // 朧: battle-only card (hazy look)
     if (inst && inst.residual) cls.push('residual'); // 鏡の主「残り香」: 縁がくすんで表示 (SPEC) — QA: was never shown in battle
 
     const el = h(opts.onClick ? 'button' : 'div', {
@@ -297,7 +305,8 @@
     );
     const kwChips = keywordChips(def, isInst(x) ? x : null);
     const kwList = ((isInst(x) && x.keywords) || def.keywords || []);
-    const glossary = KEYWORDS.filter(function (k) { return kwList.includes(k.id); });
+    const glossary = KEYWORDS.filter(function (k) { return kwList.includes(k.id); }).map(function (k) { return { name: k.name, rule: k.rule }; })
+      .concat(TERMS.filter(function (t) { return (def.text || '').indexOf(t.word) >= 0 || (t.word === '朧' && isInst(x) && x.oboro); }).map(function (t) { return { name: t.word, rule: t.rule }; }));
     const body = h('div', { class: 'card-detail lin-' + lineage },
       renderCard(def, { size: 'l' }),
       facts,

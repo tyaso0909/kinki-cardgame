@@ -154,7 +154,7 @@
         if (!t) return null;
         target = t.uid;
       }
-      if (this.attackTargetsFor(pIdx).indexOf(target) < 0) return null;
+      if (this.attackTargetsOf(pIdx, attacker).indexOf(target) < 0) return null;
       return function () { return self.attack(pIdx, attacker.uid, target); };
     }
     if (desc.type === 'ability') {

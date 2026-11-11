@@ -453,6 +453,7 @@
     if (inst.attacksLeft <= 0) return 'このターンはもう攻撃した';
     if (g.status(0, 'cannotAttack')) return 'このターンは攻撃できない効果を受けている';
     if (inst.flags && inst.flags.cannotAttack) return '攻撃できない状態';
+    if (inst.summonedTurn === g.turn && !g.hasKeyword(inst, 'rush') && g.hasKeyword(inst, 'charge')) return '突進：出したターンは、相手のモンスターにだけ攻撃できる';
     if (inst.summonedTurn === g.turn && !g.hasKeyword(inst, 'rush')) return '出したターンは攻撃できない（速攻なら攻撃できる）';
     return '今は攻撃できない';
   }

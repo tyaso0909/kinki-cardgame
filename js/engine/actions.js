@@ -625,6 +625,30 @@
     return inst;
   };
 
+  // 朧 (oboro): a card made during the battle. It plays like a normal card (it goes to the grave, can be
+  // stolen…) but it is never added to the run deck — the battle deck is rebuilt from the run deck each fight,
+  // and G.Data.restoreVault skips it. where: 'deck' (shuffled in) | 'deckTop' | 'hand'. opts: {costMod}
+  P.createOboro = async function (defId, who, where, opts) {
+    opts = opts || {};
+    const p = this.who(who);
+    const g = this.game;
+    const inst = g.createCardInst(defId, p.idx, {});
+    inst.oboro = true;
+    if (opts.costMod) inst.costMod = opts.costMod;
+    const name = this.nameOf(inst);
+    if (where === 'hand') {
+      inst.zone = 'hand'; p.hand.push(inst);
+      this.log(p.name + 'は朧の' + name + 'を手札に加えた');
+    } else {
+      const at = where === 'deckTop' ? 0 : this.rng.int(p.deck.length + 1);
+      inst.zone = 'deck'; p.deck.splice(at, 0, inst);
+      this.log(p.name + 'の山札に朧の' + name + 'が加わった' + (where === 'deckTop' ? '（一番上）' : ''));
+    }
+    g._ver++;
+    g.emit('moveZone', { uid: inst.uid, defId: inst.defId, who: p.idx, from: 'limbo', to: inst.zone, oboro: true });
+    return inst;
+  };
+
   P.addSeal = async function (inst, who) {
     const p = this.who(who);
     const g = this.game;

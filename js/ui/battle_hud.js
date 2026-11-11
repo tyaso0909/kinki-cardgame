@@ -108,7 +108,9 @@
     const badges = (ui.KEYWORDS || []).filter(function (k) { return kws.indexOf(k.id) >= 0 && k.id !== 'guard'; });
     if (kws.indexOf('ward') >= 0) el.classList.add('is-ward');
     if (kws.indexOf('untouchable') >= 0) el.classList.add('is-untouchable');
-    if (badges.length) el.appendChild(h('span', { class: 'bt-kwb', 'aria-label': badges.map(function (k) { return k.name; }).join('・') }, badges.map(function (k) { return h('i', { class: 'kwb-' + k.id }, k.name); })));
+    const items = badges.map(function (k) { return { id: k.id, name: k.name }; });
+    if (inst.oboro) items.push({ id: 'oboro', name: '朧' });
+    if (items.length) el.appendChild(h('span', { class: 'bt-kwb', 'aria-label': items.map(function (k) { return k.name; }).join('・') }, items.map(function (k) { return h('i', { class: 'kwb-' + k.id }, k.name); })));
   }
   function monsterCard(game, inst, view, where) {
     const def = defOf(inst);

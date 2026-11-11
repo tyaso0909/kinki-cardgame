@@ -2,10 +2,11 @@
   'use strict';
 
   // ---------------------------------------------------------------
-  // cards_ext.js — 2026-11 追加カード 45枚（企画書「追加モンスター案」「バフ・デバフ」「最大マナ」）
+  // cards_ext.js — 2026-11 追加カード 53枚（企画書「追加モンスター」「バフ・デバフ」「最大マナ」「軽いコンボ用の切り札」）
   //   ids continue each lineage's numbering: accel_26.., cycle_26.., copy_26.., chain_26.., time_26..,
   //   doom_26.., gen_31..
-  //   New keywords (engine): ward 加護 / untouchable 不可侵 / double 連撃 / pierce 貫通.
+  //   New keywords (engine): ward 加護 / untouchable 不可侵 / double 連撃 / pierce 貫通 / charge 突進.
+  //   朧 (oboro): battle-only cards made by ctx.createOboro — never join the run deck.
   //   New statuses: handLimitDelta, monsterAtkDelta, atkPerHandCard, curseShrink; def.effects.dynamicStats.
   // ---------------------------------------------------------------
   const Fx = G.Fx;
@@ -283,6 +284,66 @@
         const p = game.players[inst.owner];
         const x = p ? p.maxMana : 0;
         return { atk: x, hp: x };
-      } } }
+      } } },
+
+    // ================================================================ 軽いコンボ用の切り札（8）— 突進・朧
+    { id: 'accel_34', name: '群れ火の蜥蜴', type: 'monster', lineage: 'accel', role: 'finisher', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, keywords: ['charge'], tags: ['finisher', 'loopPart'],
+      text: '1/1。突進。召喚時、同名の朧カードを1枚山札に加え、相手に3ダメージを与える',
+      flavor: '一匹見たら、山札に三十匹いると思え。',
+      effects: { onSummon: async function (ctx) {
+        await ctx.createOboro('accel_34', ctx.me, 'deck');
+        await ctx.damage(ctx.opp, 3);
+      } } },
+    { id: 'accel_35', name: '火種の子竜', type: 'monster', lineage: 'accel', role: 'fuel', rarity: 'rare',
+      cost: 0, atk: 1, hp: 1, tags: ['dragon', 'loopPart'],
+      text: '1/1。召喚時、マナ+1。コストが1多い同名の朧カードを手札に加える',
+      effects: { onSummon: async function (ctx) {
+        await ctx.gainMana(1);
+        await ctx.createOboro('accel_35', ctx.me, 'hand', { costMod: (ctx.card.costMod || 0) + 1 });
+      } } },
+    { id: 'cycle_30', name: '写本喰いの紙魚', type: 'monster', lineage: 'cycle', role: 'fuel', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, tags: ['loopPart'],
+      text: '1/1。召喚時、同名の朧カードを山札の一番上に置き、カードを1枚引く',
+      effects: { onSummon: async function (ctx) {
+        await ctx.createOboro('cycle_30', ctx.me, 'deckTop');
+        await ctx.draw(1);
+      } } },
+    { id: 'chain_31', name: '雷の申し子', type: 'monster', lineage: 'chain', role: 'finisher', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, keywords: ['charge'], tags: ['finisher'],
+      text: '1/1。突進。召喚時、連鎖数+2。連鎖数が10以上なら、相手に連鎖数と同じダメージを与える',
+      effects: { onSummon: async function (ctx) {
+        await ctx.addChain(2);
+        const n = ctx.chainOf(ctx.me);
+        if (n >= 10) await ctx.damage(ctx.opp, n);
+      } } },
+    { id: 'copy_31', name: '鏡の雛', type: 'monster', lineage: 'copy', role: 'finisher', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, tags: ['phantomMaker', 'finisher', 'loopPart'],
+      text: '1/1。召喚時、このカードの幻影を2体出す。常在：自分の幻影が出るたび、相手に1ダメージを与える',
+      flavor: '鏡の前で鳴くと、鏡の向こうの雛も鳴く。その向こうの雛も。',
+      effects: { onSummon: Fx.phantomOfSelf(2), onPhantomCreated: Fx.dmgOpp(1) } },
+    { id: 'time_31', name: '砂粒の妖精', type: 'monster', lineage: 'time', role: 'finisher', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, tags: ['finisher'],
+      text: '1/1。召喚時、自分の時限カードすべてのカウント-1。これで発動した時限カード1枚につき、相手に2ダメージを与える',
+      effects: { onSummon: async function (ctx) {
+        const list = ctx.me.timed.slice();
+        if (!list.length) { ctx.log('時限カードがない'); return; }
+        await ctx.adjustTimed(list, -1, ctx.me);
+        const fired = list.filter(function (c) { return c.zone !== 'timed'; }).length;
+        if (fired && ctx.game.winner === null) await ctx.damage(ctx.opp, fired * 2);
+      } } },
+    { id: 'doom_32', name: '骨鳴らし', type: 'monster', lineage: 'doom', role: 'fuel', rarity: 'rare',
+      cost: 1, atk: 1, hp: 1, keywords: ['charge'], tags: ['loopPart'],
+      text: '1/1。突進。破壊時、同名の朧カードを2枚山札に加え、相手に呪詛2',
+      flavor: 'カラカラと鳴るたびに、数が増えている気がする。',
+      effects: { onDeath: async function (ctx) {
+        await ctx.createOboro('doom_32', ctx.me, 'deck');
+        await ctx.createOboro('doom_32', ctx.me, 'deck');
+        await ctx.addCurse(ctx.opp, 2);
+      } } },
+    { id: 'gen_43', name: '小鬼の爆弾魔', type: 'monster', lineage: 'generic', role: 'disrupt', rarity: 'rare',
+      cost: 2, atk: 2, hp: 1, keywords: ['charge'], tags: ['disrupt'],
+      text: '2/1。突進。破壊時、相手と相手のモンスターすべてに2ダメージを与える',
+      effects: { onDeath: Fx.dmgOppAndBoard(2) } }
   ]);
 })(globalThis.G = globalThis.G || {});

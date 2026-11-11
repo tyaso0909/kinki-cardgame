@@ -819,3 +819,5 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
 /* 加護: a soft halo; 不可侵: a ghostly double outline (it can't be aimed at) */
 .bt-board .card.is-ward .card-frame { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus) 55%, transparent), 0 0 10px color-mix(in srgb, var(--focus) 30%, transparent); }
 .bt-board .card.is-untouchable .card-frame { outline: 1px dashed color-mix(in srgb, var(--time) 70%, transparent); outline-offset: 3px; }
+.bt-kwb .kwb-charge { border-color: color-mix(in srgb, var(--accel) 50%, var(--ink-faint)); }
+.bt-kwb .kwb-oboro { border-style: dashed; color: #cfd8ff; }

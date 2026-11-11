@@ -282,7 +282,7 @@
       this.emit('illegal', { action: 'attack', uid: attackerUid, reason: 'cannotAttack' });
       return { ok: false, reason: 'cannotAttack' };
     }
-    const legalTargets = this.attackTargetsFor(pIdx);
+    const legalTargets = this.attackTargetsOf(pIdx, attacker);
     const tkey = targetUid === 'face' ? 'face' : targetUid;
     if (legalTargets.indexOf(tkey) < 0) {
       this.emit('illegal', { action: 'attack', uid: attackerUid, reason: 'badTarget' });

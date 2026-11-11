@@ -87,3 +87,5 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - New statuses (sum): `handLimitDelta`, `monsterAtkDelta`, `atkPerHandCard`, `curseShrink` (side 'enemy': −1/−1 per 5 curse). `def.effects.dynamicStats(game, inst)` adds to atk/hp (マナの巨人; `def.xStats` makes cards show X/X off the board). All folded in by `Game.statAura`.
 - `Game.sweepDead()` destroys monsters at HP ≤ 0 after every action, at turn end (buff expiry) and after turn-start triggers.
 - Max mana has no cap (by design).
+- 突進 `charge`: on its summon turn (without 速攻) a monster may attack monsters only — `Game.attackTargetsOf(pIdx, inst)` (used by getAttackers, attack(), loop replay); `canAttackWith` is false when no enemy monster can be attacked.
+- 朧 (oboro): `ctx.createOboro(defId, who, 'deck'|'deckTop'|'hand', {costMod})` makes a normal card (not isCopy: it goes to the grave etc.) flagged `inst.oboro`; `G.Data.restoreVault` skips it, so it never reaches the run deck. UI: `.card.oboro` (朧 mark, hazy), board badge, card-detail term (`G.ui.TERMS`).

@@ -101,7 +101,7 @@
         (p[z] || []).slice().forEach(function (c) {
           const from = c.zone === 'vault' ? c.stolenFrom : (c.stolenFrom !== null && c.stolenFrom !== i ? c.stolenFrom : null);
           if (from === null || from === undefined) return;
-          if (c.isCopy || c.isPhantom) return;
+          if (c.isCopy || c.isPhantom || c.oboro) return; // 朧 cards never outlive the battle
           out[from].push(c.defId);
           game.removeFromZone(c);
           c.zone = 'void';

@@ -580,3 +580,9 @@ html[data-theme="light"] .rar-taboo .card-name { color: #5a2aa8; }
 .card-detail .detail-kwrules dt { font-family: var(--font-title); font-weight: 700; color: var(--lc, var(--generic)); white-space: nowrap; }
 html:not([data-theme="light"]) .card-detail .detail-kwrules dt { color: color-mix(in srgb, var(--lc, var(--generic)) 60%, white 40%); }
 .card-detail .detail-kwrules dd { margin: 0; color: var(--ink-dim); }
+
+/* ---------- 朧 (oboro): battle-only cards look hazy and carry a 朧 mark (like 幻 on phantoms) ---------- */
+.card.oboro .card-frame { box-shadow: inset 0 0 0 1px color-mix(in srgb, #cfd8ff 45%, transparent), inset 0 0 16px color-mix(in srgb, #cfd8ff 32%, transparent); }
+.card.oboro .card-art { filter: blur(.3px) saturate(.75) brightness(1.08); }
+.card.oboro::after { content: "朧"; position: absolute; right: 0.5em; top: 2.9em; font-size: 0.8em; color: #cfd8ff; font-family: var(--font-title); z-index: 3; text-shadow: 0 0 6px rgba(207,216,255,.7); }
+.kw.kw-oboro { border-style: dashed; }

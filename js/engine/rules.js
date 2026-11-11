@@ -376,9 +376,21 @@
     if (inst.owner !== pIdx || (inst.zone !== 'board' && inst.zone !== 'phantoms')) return false;
     if (inst.attacksLeft <= 0) return false;
     if (this.status(pIdx, 'cannotAttack')) return false;
-    if (inst.summonedTurn === this.turn && !this.hasKeyword(inst, 'rush')) return false;
     if (inst.flags && inst.flags.cannotAttack) return false;
+    if (inst.summonedTurn === this.turn && !this.hasKeyword(inst, 'rush')) {
+      // 突進 (charge): on the turn it arrives it may attack monsters only
+      if (!this.hasKeyword(inst, 'charge')) return false;
+      if (!this.attackTargetsFor(pIdx).some(function (t) { return t !== 'face'; })) return false;
+    }
     return true;
+  };
+  // Targets one attacker may choose (突進 on its first turn: monsters only).
+  Game.prototype.attackTargetsOf = function (pIdx, inst) {
+    const all = this.attackTargetsFor(pIdx);
+    if (inst && inst.summonedTurn === this.turn && !this.hasKeyword(inst, 'rush') && this.hasKeyword(inst, 'charge')) {
+      return all.filter(function (t) { return t !== 'face'; });
+    }
+    return all;
   };
 
   Game.prototype.attackTargetsFor = function (pIdx) {
@@ -392,9 +404,8 @@
 
   Game.prototype.getAttackers = function (pIdx) {
     const self = this;
-    const targets = this.attackTargetsFor(pIdx);
     return this.monstersOf(pIdx).filter(function (m) { return self.canAttackWith(pIdx, m); })
-      .map(function (m) { return { uid: m.uid, defId: m.defId, atk: self.atkOf(m), targets: targets.slice() }; });
+      .map(function (m) { return { uid: m.uid, defId: m.defId, atk: self.atkOf(m), targets: self.attackTargetsOf(pIdx, m) }; });
   };
 
   // ---- win checks -----------------------------------------------------------
