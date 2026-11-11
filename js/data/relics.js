@@ -386,4 +386,24 @@
 
   reg({ id: 'relic_mask_pile', name: '仮面の山', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'copy', text: '自分の幻影は体力+1',
     effects: { grants: [{ key: 'phantomHpBonus', value: 1 }] } });
+
+  // 竜のエリート（2026-11）
+  function isDragonInst(inst) { const d = DB.tryGet(inst.defId); return !!(d && d.tags.indexOf('dragon') >= 0); }
+  reg({ id: 'relic_dragon_flute_charm', name: '竜笛の首飾り', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'accel', text: '戦闘開始時、山札から竜1枚を手札に加える',
+    effects: { onBattleStart: async function (ctx, ev) {
+      if (!isMine(ctx, ev)) return;
+      await ctx.tutor(function (c, d) { return d.tags.indexOf('dragon') >= 0 && !d.uncastable; }, ctx.owner, { random: true });
+    } } });
+
+  reg({ id: 'relic_dragoon_helm', name: '竜騎士の兜', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'copy', text: '自分が竜を出すたび（幻影を含む）、連鎖数+1',
+    effects: {
+      onMonsterSummoned: async function (ctx, ev) { if (isMine(ctx, ev) && ev.card && isDragonInst(ev.card)) await ctx.addChain(1, ctx.owner); },
+      onPhantomCreated: async function (ctx, ev) { if (isMine(ctx, ev) && ev.card && isDragonInst(ev.card)) await ctx.addChain(1, ctx.owner); }
+    } });
+
+  reg({ id: 'relic_dragonbone_beads', name: '竜骨の数珠', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'doom', text: '自分のターン開始時、自分の墓地に竜がいれば相手に呪詛1',
+    effects: { onTurnStart: async function (ctx, ev) {
+      if (!isMine(ctx, ev) || !ctx.owner.grave.some(isDragonInst)) return;
+      await ctx.addCurse(ctx.game.players[1 - ctx.owner.idx], 1);
+    } } });
 })(globalThis.G = globalThis.G || {});

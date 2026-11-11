@@ -95,3 +95,9 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Effective keywords: `Game.keywordsOf(inst)` / `hasKeyword` merge printed keywords, this-turn keywords (`inst.flags.tempKw` set by `ctx.addKeywordsThisTurn`, removed at that turn's end) and granted ones (`dragonWard` 竜の盟約, `phantomRush` 禁忌の万華竜). Ward/double checks go through hasKeyword.
 - `def.effects.attackCondition(game, inst)` gates canAttackWith (封じられし古竜).
 - 禁忌の竜: `def.uncastable` (canPlayCard → 'uncastable', cost shown ∞; free-summon effects skip them) and `effects.handAbility` — `getAbilities`/`useAbility` include hand cards. The ability picks 4 same-lineage monsters with `ignoreWard: true` (either side, phantoms count), destroys them and summons a 朧 copy. UI: hand card glows with a 効果 badge; tapping it offers the ability in the prompt bar. Text uses the term 禁忌召喚（〇〇4体） explained in G.ui.TERMS.
+
+## Enemy decks: new cards, dragon elites, deck-out fix (2026-11)
+- Normal enemies used to lose by decking themselves (15 cards + many draw/mill cards; ~65% of simulated normal fights ended that way). Now: act 1 normals 15 cards (見張りの石像 20), act 2–3 normals 20 (名もなき挑戦者 builds 20), and fewer draw/mill cards (水鏡の占い, 未来の手紙, 知識の泉水, 血の契約, 沈む書庫…).
+- AI (`js/ai/ai.js`): `evaluate` treats an empty own deck as almost a loss (−400; −90 at 1 card, −35 at 2). Unsimulated picks (sim budget spent) are verified and refused when worse than ending the turn. Deliberate mistakes never pick an option 100+ worse than the best. `handleLoop` caps a loop that draws so one card stays in the deck.
+- Three dragon elites (one per act): 竜笛の巫女 (act 1, 38), 鏡鱗の竜騎士 (act 2, 78), 古竜の墓守 (act 3, 125). Trumps 竜笛 / 竜騎士の号令 / 竜墓の鐘 (cards_boss.js, elite7–9), enemy relics 竜笛の首飾り / 竜騎士の兜 / 竜骨の数珠, combos elite_flute / elite_dragoon / elite_tomb.
+- Enemies never use 禁忌 (taboo/uncastable) cards nor 不可侵の巨神・終末の獣・縮小の呪文・巨人化の秘薬・竜狩りの大弩・重力の谷 (tests/enemy_dragon.test.js).

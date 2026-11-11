@@ -123,7 +123,11 @@
     s -= opp.maxMana * 0.4;
     // deck-out danger: each card below a 6-card cushion costs more the thinner the deck gets
     if (me.deck.length < 6) s -= Math.pow(6 - me.deck.length, 2) * 2.5;
-    if (me.deck.length === 0) s -= 60;
+    // An empty deck loses at our next draw step unless we win first: treat it as nearly a loss so the
+    // AI never thins itself out for a little damage or card advantage (normal enemies have 15-card decks).
+    if (me.deck.length === 0) s -= 400;
+    else if (me.deck.length === 1) s -= 90;   // one more draw step, then out
+    else if (me.deck.length === 2) s -= 35;
     if (opp.deck.length < 6) s += Math.pow(6 - opp.deck.length, 1.5) * 1.5;
     s += me.extraTurns * 8;
     if (me.skipNextTurn) s -= 10;
@@ -381,7 +385,7 @@
     const g2 = game.clone();
     g2.players[pIdx].chooser = AI.makeChooser(style);
     const me0 = g2.players[pIdx], opp0 = g2.players[1 - pIdx];
-    const before = { life: opp0.life, curse: opp0.curse, mana: me0.mana, hand: me0.hand.length, phantoms: me0.phantoms.length };
+    const before = { life: opp0.life, curse: opp0.curse, mana: me0.mana, hand: me0.hand.length, phantoms: me0.phantoms.length, deck: me0.deck.length };
     let r;
     try { r = await g2.runLoop(pIdx, 1); } catch (e) { r = { iterations: 0 }; }
     const me1 = g2.players[pIdx], opp1 = g2.players[1 - pIdx];
@@ -398,6 +402,18 @@
     const opp = game.players[1 - pIdx];
     let times = 'inf';
     if (!lethalLoop) times = Math.min(300, Math.max(10, opp.life + opp.maxMana + 10));
+    // A loop that draws (e.g. 永劫の書 + 火種) is bounded by our own deck: stop while one card is left for
+    // the next draw step, unless the loop wins first (then the deck no longer matters).
+    const deckCost = before.deck - me1.deck.length;
+    if (deckCost > 0 && g2.winner !== pIdx) {
+      const cap = Math.floor((game.players[pIdx].deck.length - 1) / deckCost);
+      if (cap < 1) {
+        det.cycle.forEach(function (a) { state.blocked[sig(a)] = true; });
+        game.clearLoop();
+        return false;
+      }
+      times = times === 'inf' ? cap : Math.min(times, cap);
+    }
     const res = await game.runLoop(pIdx, times);
     state.actions += 1;
     state.loopsRun = (state.loopsRun || 0) + 1;
@@ -488,7 +504,8 @@
       let choice = legal[0] || cands.find(function (c) { return c.type === 'endTurn'; });
       // deliberate mistakes: sometimes take the 2nd/3rd best non-decisive option
       if (mistake > 0 && legal.length > 1 && rng.chance(mistake)) {
-        const alt = legal.slice(1, 3).filter(function (c) { return !c.decisive; });
+        // ...but never a catastrophic one (e.g. drawing the deck empty)
+        const alt = legal.slice(1, 3).filter(function (c) { return !c.decisive && c.score > legal[0].score - 100; });
         if (alt.length) choice = rng.pick(alt);
       }
       if (!choice || choice.type === 'endTurn') break;
@@ -497,7 +514,9 @@
       if (!choice.simulated && choice.type !== 'attack') {
         const v = await simulate(game, pIdx, choice, style);
         choice.simulated = true;
-        if (v.bad || (v.decisive && !forecasted)) {
+        // also refuse a pick that turns out worse than simply ending the turn (e.g. cantrips drawing the
+        // deck empty) once the sim budget is spent and it was ranked by prior alone
+        if (v.bad || (v.decisive && !forecasted) || v.score < base - 1) {
           if (v.decisive && !forecasted) state.lethalBlocked = true;
           state.blocked[sig(choice)] = true;
           continue;

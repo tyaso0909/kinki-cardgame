@@ -9,14 +9,14 @@
   const cardsLoaded = G.CardDB.has('accel_01') && G.CardDB.has('boss1_01');
   const id = function (name) { return G.AI.cardId(name); };
 
-  test('EnemyDB: 15 normal / 6 elite / 5 boss, kind+tier+isBoss set, acts and lives per SPEC', () => {
+  test('EnemyDB: 15 normal / 9 elite / 5 boss, kind+tier+isBoss set, acts and lives per SPEC', () => {
     const normals = DB.filter(function (e) { return e.tier === 'normal'; });
     const elites = DB.filter(function (e) { return e.tier === 'elite'; });
     const bosses = DB.filter(function (e) { return e.tier === 'boss'; });
-    eq(normals.length, 15); eq(elites.length, 6); eq(bosses.length, 5);
+    eq(normals.length, 15); eq(elites.length, 9); eq(bosses.length, 5);
     [1, 2, 3].forEach(function (act) {
       eq(normals.filter(function (e) { return e.act === act; }).length, 5, 'act ' + act + ' normals');
-      eq(elites.filter(function (e) { return e.act === act; }).length, 2, 'act ' + act + ' elites');
+      eq(elites.filter(function (e) { return e.act === act; }).length, 3, 'act ' + act + ' elites');
     });
     DB.all().forEach(function (e) {
       eq(e.kind, e.tier, e.id + ' kind');
@@ -32,13 +32,15 @@
     elites.forEach(function (e) { eq(e.trumps.length, 1, e.id + ' one trump'); eq(e.relicNames.length, 1, e.id + ' one relic'); });
   });
 
-  test('enemy decks resolve by Japanese name without missing cards (15 / 20 / 30)', () => {
+  test('enemy decks resolve by Japanese name without missing cards (15〜20 / 20 / 30)', () => {
     if (!cardsLoaded) return; // card files absent at this time → skip gracefully
     const sizes = { normal: 15, elite: 20, boss: 30 };
     DB.all().forEach(function (e) {
       if (e.deckBuilder) return; // 鏡の主 / 名もなき挑戦者 build per battle
       const deck = e.deck;
-      eq(deck.length, sizes[e.tier], e.id + ' deck size');
+      // normal: act 1 = 15 (見張りの石像 20), act 2〜3 = 20 — デッキ切れで自滅しないように（2026-11）
+      if (e.tier === 'normal') ok(deck.length === (e.act === 1 ? (e.id === 'enemy_watch_statue' ? 20 : 15) : 20), e.id + ' deck size ' + deck.length);
+      else eq(deck.length, sizes[e.tier], e.id + ' deck size');
       const missing = e.deckSpec.filter(function (s) { return !id(s.name); }).map(function (s) { return s.name; });
       eq(missing.length, 0, e.id + ' missing cards: ' + missing.join('、'));
       ok(deck.every(function (d) { return G.CardDB.has(d); }), e.id + ' all ids registered');
@@ -163,11 +165,11 @@
     ok(elite.relics.length >= 2, 'elite has 2 relics at depth 8');
   });
 
-  test('名もなき挑戦者 builds a random 15-card deck per battle', () => {
+  test('名もなき挑戦者 builds a random 20-card deck per battle', () => {
     if (!cardsLoaded) return;
     const a = G.AI.enemyPlayerConfig('enemy_nameless_challenger', { seed: 1 });
     const b = G.AI.enemyPlayerConfig('enemy_nameless_challenger', { seed: 2 });
-    eq(a.deck.length, 15); eq(b.deck.length, 15);
+    eq(a.deck.length, 20); eq(b.deck.length, 20);
     ok(a.deck.join() !== b.deck.join(), 'different seeds → different decks');
     ok(a.deck.every(function (d) { return !G.CardDB.get(d).bossOnly; }));
   });

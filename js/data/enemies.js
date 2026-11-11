@@ -2,7 +2,7 @@
   'use strict';
 
   // ---------------------------------------------------------------
-  // js/data/enemies.js — 15 通常敵 / 6 エリート / 5 ボス (SPEC 通常敵とエリート, ボス詳細設計).
+  // js/data/enemies.js — 15 通常敵 / 9 エリート / 5 ボス (SPEC 通常敵とエリート, ボス詳細設計).
   //
   // Cards, relics and fields are named in Japanese and resolved to ids LAZILY
   // (on first access of def.deck / def.relics / def.field), so this file does not
@@ -199,77 +199,77 @@
   // =====================================================================================
   register({ id: 'enemy_fire_lizard', name: '火吹きトカゲ', tier: 'normal', act: 1, life: 14, lineage: ['accel'], style: 'speed',
     teaches: 'マナ加速と出口', introText: '小さな火を吐きながら、こちらを睨んでいる。',
-    deck: [D('火の粉の妖精', 3), D('マナ喰いの小妖精', 2), D('火種', 2), D('夜明けの暴走炉'), D('焦熱解放'), /* QA tuning: 焦熱解放 2→1, 火の粉の妖精 2→3 */ D('竜の卵'), D('魔力の泉'), D('炉番のドワーフ'), D('過充填の槍'), D('見習いの火球', 2)],
+    deck: [D('火の粉の妖精', 3), D('マナ喰いの小妖精', 2), D('火種'), D('帰還の火'), D('夜明けの暴走炉'), D('焦熱解放'), /* QA tuning: 焦熱解放 2→1, 火の粉の妖精 2→3 */ D('竜の卵'), D('魔力の泉'), D('炉番のドワーフ'), D('過充填の槍'), D('群れ火の蜥蜴'), D('炉心の見習い')],
     hazard: [H(anyInZones(['hand'], ['焦熱解放', '過充填の槍']), 50), H(function (g, e) { return e.maxMana >= 5; }, 50)],
     forecastText: '次のターン、炎が解き放たれる' });
 
   register({ id: 'enemy_lost_codex', name: '迷子の写本', tier: 'normal', act: 1, life: 12, lineage: ['cycle'], style: 'charge',
     teaches: '山札切れのルール', introText: 'ページが勝手にめくれている。自分が何の本か忘れているらしい。',
-    deck: [D('書庫の小人', 2), D('知識の泉水', 2), D('水鏡の占い', 2), D('泡沫の呪文', 2), D('潮の満ち引き'), D('写本の精霊', 2), D('満ちる書架'), D('言霊の洪水', 2), D('渦潮の番人')] });
+    deck: [D('書庫の小人', 2), D('知識の泉水'), D('古文書の発掘'), D('潮騒の人魚'), D('写本喰いの紙魚', 2), D('潮の満ち引き'), D('写本の精霊', 2), D('満ちる書架'), D('言霊の洪水', 2), D('渦潮の番人'), D('逆巻く大海嘯')] });
 
   register({ id: 'enemy_bone_goblin', name: '骨拾いの小鬼', tier: 'normal', act: 1, life: 15, lineage: ['doom'], style: 'specialWin',
     teaches: '呪詛のルール', introText: '拾い集めた骨を並べて、何かを数えている。',
-    deck: [D('墓場の骸骨兵', 3), D('呪詛の囁き', 2), D('生け贄の儀', 2), D('呪いの刻印'), D('墓守の死霊術師'), D('呪いを運ぶ鴉'), D('血の契約'), D('呪詛の爆発'), D('死者の行進'), D('見習いの火球', 2)],
+    deck: [D('墓場の骸骨兵', 3), D('呪詛の囁き', 3), D('生け贄の儀', 2), D('呪いの刻印'), D('墓守の死霊術師'), D('呪いを運ぶ鴉'), D('呪詛の爆発'), D('死者の行進'), D('骨鳴らし', 2)],
     hazard: [H(function (g, e, p) { return p.curse >= 12; }, 60), H(inHand('呪詛の爆発'), 40)], forecastText: '次のターン、呪いが弾ける' });
 
   register({ id: 'enemy_mist_twins', name: '霧の双子姉妹', tier: 'normal', act: 1, life: 16, lineage: ['copy'], style: 'speed',
     teaches: '幻影のルール', introText: '二人いる。いや、三人……数えるほど増えていく。',
-    deck: [D('霧の双子', 3), D('幻灯の呪文', 2), D('鏡写しの小鬼', 2), D('影の群狼', 2), D('幻の盾'), D('鏡の破片'), D('万華鏡の紋章'), D('幻影の総攻撃'), D('分裂する粘体'), D('見習いの火球')], // QA tuning: 消えない残像 → 見習いの火球
+    deck: [D('霧の双子', 3), D('幻灯の呪文', 2), D('鏡写しの小鬼', 2), D('影の群狼', 2), D('幻の盾'), D('鏡の破片'), D('万華鏡の紋章'), D('幻影の総攻撃'), D('分裂する粘体'), D('鏡の雛')], // QA tuning: 消えない残像 → 見習いの火球 → 鏡の雛
     hazard: [H(inHand('幻影の総攻撃'), 50), H(function (g, e) { return g.monstersOf(e.idx).length >= 4; }, 50)], forecastText: '次のターン、幻影が総攻撃する' });
 
   register({ id: 'enemy_watch_statue', name: '見張りの石像', tier: 'normal', act: 1, life: 20, lineage: ['generic'], style: 'disrupt',
     teaches: '予約魔法と妨害', introText: '石像の目が、こちらの手札を数えるように動いた。',
-    deck: [D('封じの番兵', 2), D('結界の僧兵'), D('渦潮の番人', 2), D('封言の呪文', 2), D('重圧の呪文'), D('時間停止'), D('手札崩し'), D('消滅の光'), D('砂時計の番人'), D('応急手当'), D('見習いの火球', 2)] });
+    deck: [D('封じの番兵', 2), D('結界の僧兵', 2), D('渦潮の番人'), D('封言の呪文', 2), D('重圧の呪文'), D('時間停止'), D('手札崩し'), D('消滅の光'), D('砂時計の番人'), D('見習いの火球'), D('脱力の呪い', 2), D('小鬼の爆弾魔'), D('戦の雄叫び', 2), D('魔封じの猫'), D('霧払いの風')] });
 
   register({ id: 'enemy_thunder_band', name: '雷鳴の楽隊', tier: 'normal', act: 2, life: 35, lineage: ['chain'], style: 'charge',
     teaches: '連鎖数と嵐の前兆', introText: '楽器のかわりに、稲妻を鳴らしている。',
-    deck: [D('火花', 3), D('静電気', 2), D('迅雷の閃き', 2), D('雷鳴の子狐', 2), D('放電する精霊', 2), D('雷撃の連打', 2), D('嵐を呼ぶ巫女'), D('稲光の導線')],
+    deck: [D('火花'), D('静電気'), D('迅雷の閃き'), D('雷竜の雛', 2), D('雷鳴の子狐', 3), D('放電する精霊', 3), D('雷撃の連打', 3), D('嵐を呼ぶ巫女'), D('稲光の導線'), D('雷の申し子'), D('迅雷の獅子'), D('帯電の騎士'), D('雷纏い')],
     hazard: [H(handFull, 50), H(inHand('雷撃の連打'), 50)], forecastText: '次のターン、小さな嵐が来る' });
 
   register({ id: 'enemy_clock_gatekeeper', name: '時計塔の門番', tier: 'normal', act: 2, life: 40, lineage: ['time'], style: 'disrupt',
     teaches: '時限カードへの対処', introText: '門番は懐中時計を見て、わざとらしく首を振った。',
-    deck: [D('時限爆弾', 3), D('砂時計の番人', 2), D('時計仕掛けの小鳥', 2), D('時の歯車', 2), D('未来の手紙'), D('刻む時の紋章'), D('時間停止'), D('未来視の梟'), D('渦潮の番人'), D('封じの番兵')],
+    deck: [D('時限爆弾', 3), D('砂時計の番人', 2), D('時計仕掛けの小鳥', 3), D('時の歯車'), D('砂粒の妖精'), D('時の加護'), D('刻む時の紋章'), D('時間停止', 2), D('眠る時竜', 2), D('渦潮の番人'), D('停滞の番人'), D('封じの番兵'), D('足止めの砂')],
     hazard: [H(function (g, e) { return count(e, ['timed'], '時限爆弾') >= 1; }, 60), H(anyInZones(['hand'], ['時の歯車', '時計仕掛けの小鳥']), 40)], forecastText: '次のターン、爆弾が落ちる' });
 
   register({ id: 'enemy_nest_hound', name: '竜の巣の番犬', tier: 'normal', act: 2, life: 42, lineage: ['accel'], style: 'speed',
     teaches: '竜による速攻', introText: '卵を守る犬。卵のほうが、犬より熱い。',
-    deck: [D('竜の卵', 3), D('焚べ火の祭壇'), D('火喰い竜', 2), D('火種', 2), D('マナ喰いの小妖精', 2), D('夜明けの暴走炉'), D('炎翼の伝令'), D('帰還の火'), D('魔力の泉'), D('見習いの火球')],
+    deck: [D('竜の卵', 3), D('焚べ火の祭壇'), D('火喰い竜', 2), D('火種', 2), D('マナ喰いの小妖精', 2), D('夜明けの暴走炉'), D('炎翼の伝令'), D('魔力の泉'), D('炎竜の幼体', 2), D('溶岩の巨竜'), D('火種の子竜'), D('帰還の火'), D('火の粉の妖精', 2)],
     hazard: [H(inHand('火喰い竜'), 50), H(inZones(['board'], '竜の卵'), 30), H(inZones(['crests'], '焚べ火の祭壇'), 20)], forecastText: '次のターン、竜が目覚める' });
 
   register({ id: 'enemy_mirror_troupe', name: '鏡写しの道化団', tier: 'normal', act: 2, life: 32, lineage: ['copy', 'generic'], style: 'disrupt',
     teaches: 'コピーされる怖さ', introText: '道化たちは、こちらの仕草をそっくり真似してみせた。',
-    deck: [D('盗み見の鏡', 3), D('偽りの約束', 2), D('映し身の道化', 2), D('多重詠唱'), D('写し身の儀'), D('霧の双子', 2), D('幻の盾'), D('千の顔の怪盗'), D('封言の呪文'), D('見習いの火球')] });
+    deck: [D('盗み見の鏡', 3), D('偽りの約束', 2), D('映し身の道化', 3), D('多重詠唱'), D('入れ替えの鏡'), D('霧の双子', 3), D('幻の盾'), D('千の顔の怪盗'), D('封言の呪文', 2), D('鏡像の騎士'), D('幻灯の呪文'), D('鏡写しの小鬼')] });
 
   register({ id: 'enemy_archive_ghost', name: '古書庫の亡霊', tier: 'normal', act: 2, life: 35, lineage: ['cycle', 'doom'], style: 'assemble',
     teaches: '墓地の除外', introText: '読み終えた本を床に積み上げている。山は、もう亡霊より高い。',
-    deck: [D('水鏡の占い', 3), D('逆巻く大海嘯', 2), D('血の契約'), D('知識の泉水', 2), D('墓守の死霊術師'), D('墓場の骸骨兵', 2), D('潮騒の人魚'), D('沈む書庫'), D('古文書の発掘'), D('泡沫の呪文')],
+    deck: [D('水鏡の占い'), D('逆巻く大海嘯', 2), D('呪詛の囁き', 2), D('知識の泉水'), D('墓守の死霊術師', 2), D('墓場の骸骨兵', 3), D('潮騒の人魚', 2), D('呪いを運ぶ鴉', 2), D('写本の巨像'), D('死者の力'), D('古文書の発掘'), D('呪いの刻印'), D('封じの番兵')],
     hazard: [H(inHand('逆巻く大海嘯'), 50), H(function (g, e) { return e.grave.length >= 8; }, 50)], forecastText: '次のターン、大海嘯が来る' });
 
   register({ id: 'enemy_storm_hatchling', name: '嵐竜の雛', tier: 'normal', act: 3, life: 65, lineage: ['chain', 'accel'], style: 'charge',
     teaches: '系統をまたぐコンボ', introText: '雛とは名ばかりの、雷をまとった竜。',
-    deck: [D('火種', 2), D('静電気', 2), D('火花', 2), D('夜明けの暴走炉'), D('天雷の裁き', 2), D('嵐の大精霊'), D('稲光の導線'), D('雷撃の連打'), D('帯電の騎士'), D('魔力奔流'), D('無限の坩堝')],
+    deck: [D('火種'), D('静電気', 2), D('火花'), D('雷竜の雛', 2), D('夜明けの暴走炉'), D('天雷の裁き', 2), D('嵐の大精霊'), D('天穿つ雷霆竜'), D('雷撃の連打', 2), D('雷纏い', 2), D('魔力奔流'), D('無限の坩堝'), D('帯電の騎士'), D('稲光の導線'), D('雷鳴の子狐')],
     hazard: [H(inHand('天雷の裁き'), 40), H(handFull, 30), H(anyInZones(['hand', 'board'], ['無限の坩堝', '嵐の大精霊']), 30)], forecastText: '次のターン、嵐が来る' });
 
   register({ id: 'enemy_eternal_keeper', name: '永劫の書守', tier: 'normal', act: 3, life: 55, lineage: ['cycle'], style: 'assemble',
     teaches: '通常敵でも無限ループを使う', introText: '同じページを、何度も何度も読み返している。',
-    deck: [D('永劫の書', 2), D('火種', 3), D('泡沫の呪文', 2), D('知識の泉水', 2), D('言霊の洪水', 2), D('水鏡の占い'), D('放電する精霊'), D('渦潮の番人'), D('全知の雫')],
+    deck: [D('永劫の書', 2), D('火種', 3), D('泡沫の呪文'), D('知識の泉水'), D('言霊の洪水', 2), D('逆巻く大海嘯'), D('放電する精霊', 2), D('渦潮の番人', 2), D('全知の雫'), D('知識は力'), D('潮騒の人魚', 2), D('古文書の発掘'), D('封じの番兵')],
     hazard: [H(inZones(['crests'], '永劫の書'), 40), H(inHand('火種'), 30), H(anyInZones(['hand', 'board'], ['言霊の洪水', '放電する精霊']), 30)], forecastText: '次のターン、無限ループを開始する' });
 
   register({ id: 'enemy_dead_procession', name: '死者の行列', tier: 'normal', act: 3, life: 72, lineage: ['doom', 'copy'], style: 'specialWin',
     teaches: '呪詛ループへの対処', introText: '行列はどこまでも続いている。先頭も最後尾も見えない。',
-    deck: [D('分裂する粘体', 2), D('焚べ火の祭壇', 2), D('冥界の門番'), D('墓場の骸骨兵', 2), D('生け贄の儀', 2), D('死者の行進'), D('呪詛の囁き'), D('幻灯の呪文'), D('墓守の死霊術師'), D('呪いの刻印'), D('呪詛の爆発')],
+    deck: [D('分裂する粘体', 2), D('焚べ火の祭壇', 2), D('冥界の門番'), D('墓場の骸骨兵', 2), D('生け贄の儀'), D('死者の行進'), D('呪詛の囁き', 2), D('骸の黒竜'), D('墓守の死霊術師', 2), D('呪詛の重み'), D('呪詛の爆発'), D('墓場の骸骨兵'), D('呪いの刻印'), D('幻灯の呪文'), D('霧の双子')],
     hazard: [H(inZones(['board', 'hand'], '冥界の門番'), 40), H(inZones(['crests'], '焚べ火の祭壇'), 30), H(anyInZones(['hand', 'board'], ['分裂する粘体']), 30)], forecastText: '次のターン、呪詛の行進が始まる' });
 
   register({ id: 'enemy_time_knights', name: '時渡りの騎士団', tier: 'normal', act: 3, life: 70, lineage: ['time'], style: 'assemble',
     teaches: '追加ターンを止める準備', introText: '騎士たちの影が、本人より一歩先を歩いている。',
-    deck: [D('時の王冠'), D('時喰いの砂時計', 2), D('火種', 2), D('時の前借り'), D('時の歯車'), D('時渡りの剣士', 2), D('砂時計の番人'), D('時限爆弾'), D('知識の泉水'), D('一瞬の永遠'), D('未来の手紙'), D('時を巡る魔女')],
+    deck: [D('時の王冠'), D('時喰いの砂時計', 2), D('時の前借り', 2), D('砂粒の妖精'), D('終わらぬ刻の巨人'), D('時渡りの剣士', 2), D('砂時計の番人', 2), D('時限爆弾', 2), D('時の加護'), D('一瞬の永遠'), D('時の歯車', 2), D('時を巡る魔女'), D('時計仕掛けの小鳥'), D('刻む時の紋章')],
     hazard: [H(anyInZones(['hand', 'crests'], ['時の王冠']), 40), H(inHand('時喰いの砂時計'), 30), H(anyInZones(['hand', 'board'], ['時渡りの剣士', '時を巡る魔女']), 30)], forecastText: '次のターン、時が重なる' });
 
   const RANDOM_STYLES = ['speed', 'assemble', 'charge', 'disrupt', 'specialWin'];
   register({ id: 'enemy_nameless_challenger', name: '名もなき挑戦者', tier: 'normal', act: 3, life: 60, lineage: ['generic'], style: 'speed',
     teaches: '裏設定：ほかの挑戦者の存在', introText: '顔はよく見えない。手にした束は、どこかで見たことがある。',
-    deck: [D('見習いの火球', 15)],
-    // Random deck: 15 cards from the player pool of 1〜2 random lineages (+ a few generic), built per battle.
+    deck: [D('見習いの火球', 20)],
+    // Random deck: 20 cards from the player pool of 1〜2 random lineages (+ a few generic), built per battle.
     deckBuilder: function (playerDeckIds, prevRunDeckIds, rng) {
       rng = rng || new G.RNG(1);
       const lineages = ['accel', 'cycle', 'copy', 'chain', 'time', 'doom'];
@@ -277,48 +277,71 @@
       const pool = G.CardDB.pool(function (d) { return d.lineage === l1 || d.lineage === l2 || (d.lineage === 'generic' && rng.chance(0.3)); })
         .filter(function (d) { return d.rarity !== 'taboo'; });
       const out = [];
-      while (out.length < 15 && pool.length) {
+      while (out.length < 20 && pool.length) {
         const d = rng.pick(pool);
         const w = d.rarity === 'common' ? 0.7 : d.rarity === 'rare' ? 0.25 : 0.1;
         if (rng.chance(w)) out.push(d.id);
       }
-      while (out.length < 15) out.push(G.CardDB.has('basic_01') ? 'basic_01' : pool[0].id);
+      while (out.length < 20) out.push(G.CardDB.has('basic_01') ? 'basic_01' : pool[0].id);
       return { deck: out, residual: [], style: rng.pick(RANDOM_STYLES) };
     } });
 
   // =====================================================================================
-  // エリート（6種）— 20枚、切り札1種、遺物1つ、予告は1段階
+  // エリート（9種）— 20枚、切り札1種、遺物1つ、予告は1段階
   // =====================================================================================
   register({ id: 'elite_core_dragon', name: '炉心の番竜', tier: 'elite', act: 1, life: 40, lineage: ['accel'], style: 'speed',
     trumps: ['溶けた心臓'], relics: ['竜の鱗'], introText: '炉の奥で、竜の心臓が溶けながら脈打っている。',
-    deck: [D('溶けた心臓'), D('火種', 3), D('マナ喰いの小妖精', 2), D('火の粉の妖精', 2), D('魔力の泉', 2), D('暴走する炉心'), D('夜明けの暴走炉', 2), D('竜の卵', 2), D('焦熱解放', 2), D('渦潮の番人'), D('火喰い竜'), D('黄金の水門')],
+    deck: [D('溶けた心臓'), D('火種', 2), D('魔力の種'), D('マナ喰いの小妖精', 2), D('火の粉の妖精', 2), D('魔力の泉', 2), D('暴走する炉心'), D('夜明けの暴走炉', 2), D('竜の卵', 2), D('焦熱解放', 2), D('暁焔の竜王'), D('火喰い竜'), D('黄金の水門')],
     hazard: [H(anyInZones(['hand', 'crests'], ['溶けた心臓']), 60), H(function (g, e) { return count(e, ['hand'], '火種') + count(e, ['hand'], '夜明けの暴走炉') + count(e, ['hand'], 'マナ喰いの小妖精') + count(e, ['hand'], '黄金の水門') >= 2; }, 40)],
     forecastText: '次のターン、心臓が溶け出す', reward: { gold: [50, 70], auxCard: null } });
 
   register({ id: 'elite_whispering_librarian', name: '囁く司書', tier: 'elite', act: 1, life: 35, lineage: ['cycle', 'generic'], style: 'disrupt',
     trumps: ['禁書の頁'], relics: ['封じ紐の栞'], introText: '「静かに」。司書はそう囁いて、こちらの手札を指さした。',
-    deck: [D('禁書の頁', 2), D('忘却の波', 2), D('深淵の問い', 2), D('手札崩し'), D('知識の泉水', 2), D('書庫の小人', 2), D('渦潮の番人', 2), D('封じの番兵'), D('水鏡の占い', 2), D('言霊の洪水', 2), D('満ちる書架'), D('泡沫の呪文')],
+    deck: [D('禁書の頁', 2), D('忘却の波', 2), D('深淵の問い', 2), D('手札崩し'), D('知識の泉水'), D('写本の巨像'), D('渦潮の番人', 2), D('封じの番兵', 2), D('古文書の発掘'), D('潮騒の人魚', 2), D('言霊の洪水'), D('逆巻く大海嘯'), D('知識の器'), D('魔脈断ち')],
     hazard: [H(inHand('禁書の頁'), 60), H(function (g, e, p) { return p.hand.length >= 5; }, 40)], forecastText: '次のターン、手札が書き換えられる' });
 
   register({ id: 'elite_twin_thunder_beast', name: '双頭の雷獣', tier: 'elite', act: 2, life: 80, lineage: ['chain'], style: 'charge',
     trumps: ['二つ首の咆哮'], relics: ['帯電した角'], introText: '二つの首が、交互に雷を吐く。',
-    deck: [D('二つ首の咆哮', 2), D('火花', 3), D('静電気', 2), D('迅雷の閃き', 2), D('稲光の導線', 2), D('雷鳴の子狐', 2), D('雷撃の連打', 2), D('放電する精霊'), D('嵐を呼ぶ巫女'), D('天雷の裁き'), D('雷紋の印'), D('嵐の蓄電器')],
+    deck: [D('二つ首の咆哮', 2), D('火花', 2), D('雷竜の雛', 2), D('静電気'), D('迅雷の閃き'), D('稲光の導線', 2), D('雷鳴の子狐', 2), D('雷撃の連打', 2), D('放電する精霊'), D('嵐を呼ぶ巫女'), D('天雷の裁き'), D('帯電の網'), D('雷の器'), D('雷纏い')],
     hazard: [H(inHand('二つ首の咆哮'), 50), H(function (g, e) { return e.hand.length >= 5; }, 30), H(inHand('稲光の導線'), 20)], forecastText: '次のターン、二つの咆哮が響く' });
 
   register({ id: 'elite_cursed_doll', name: '呪いの蒐集人形', tier: 'elite', act: 2, life: 70, lineage: ['doom'], style: 'specialWin',
     trumps: ['呪いの人形箱'], relics: ['綿のはみ出た胴'], introText: '人形の箱から、小さな呪いの声が漏れている。',
-    deck: [D('呪いの人形箱'), D('呪いの刻印', 2), D('墓場の骸骨兵', 3), D('呪詛の囁き', 2), D('呪いを運ぶ鴉', 2), D('呪詛の爆発', 2), D('冥王の宣告'), D('生け贄の儀', 2), D('血の契約'), D('墓守の死霊術師'), D('呪詛喰らい'), D('渦潮の番人'), D('呪詛返し')],
+    deck: [D('呪いの人形箱'), D('呪いの刻印', 2), D('墓場の骸骨兵', 3), D('呪詛の囁き', 2), D('呪いを運ぶ鴉', 2), D('呪詛の爆発', 2), D('冥王の宣告'), D('生け贄の儀', 2), D('血の契約'), D('墓守の死霊術師'), D('呪詛喰らい'), D('終焉を告げる騎士'), D('命の器')],
     hazard: [H(anyInZones(['hand', 'crests'], ['呪いの人形箱']), 40), H(function (g, e, p) { return p.curse >= 10; }, 40), H(anyInZones(['hand'], ['冥王の宣告', '呪詛の爆発']), 20)], forecastText: '次のターン、呪いが満ちる' });
 
   register({ id: 'elite_time_stopper', name: '時を止める魔導機兵', tier: 'elite', act: 3, life: 140, lineage: ['time', 'accel'], style: 'charge',
     trumps: ['緊急停止'], relics: ['予備の歯車'], introText: '機兵の胸で、見慣れない歯車が逆向きに回っている。',
-    deck: [D('緊急停止'), D('時限爆弾', 3), D('時の歯車', 2), D('火種', 2), D('夜明けの暴走炉'), D('砂時計の番人', 2), D('刻を統べる竜'), D('時計仕掛けの小鳥', 2), D('魔力の泉'), D('焦熱解放', 2), D('未来の手紙'), D('刻む時の紋章'), D('時間停止')],
+    deck: [D('緊急停止'), D('時限爆弾', 3), D('時の歯車', 2), D('火種'), D('眠る時竜'), D('夜明けの暴走炉'), D('砂時計の番人', 2), D('刻を統べる竜'), D('時計仕掛けの小鳥'), D('刻の剥落'), D('未来の器'), D('焦熱解放', 2), D('時の加護'), D('刻む時の紋章'), D('時間停止')],
     hazard: [H(inHand('緊急停止'), 50), H(function (g, e) { return count(e, ['timed'], '時限爆弾') >= 1; }, 30), H(inHand('刻を統べる竜'), 20)], forecastText: '次のターン、時が止まる' });
 
   register({ id: 'elite_thousand_faces', name: '千面の幻術師', tier: 'elite', act: 3, life: 125, lineage: ['copy'], style: 'assemble',
     trumps: ['千の仮面'], relics: ['仮面の山'], introText: '仮面の下に、また仮面。素顔はどこにもない。',
-    deck: [D('千の仮面'), D('霧の双子', 3), D('鏡写しの小鬼', 2), D('幻灯の呪文', 2), D('分裂する粘体', 2), D('万華鏡の紋章'), D('幻影の総攻撃', 2), D('影の群狼', 2), D('幻の盾'), D('幻影増殖'), D('鏡界の女王'), D('万象を映す魔神'), D('消えない残像')],
+    deck: [D('千の仮面'), D('霧の双子', 3), D('鏡写しの小鬼', 2), D('幻灯の呪文', 2), D('分裂する粘体', 2), D('万華鏡の紋章'), D('幻影の総攻撃', 2), D('影の群狼'), D('百鬼夜行の主'), D('幻の盾'), D('幻影増殖'), D('鏡界の女王'), D('万象を映す魔神'), D('鏡の軍旗')],
     hazard: [H(inHand('千の仮面'), 40), H(function (g, e) { return e.board.length >= 2; }, 30), H(anyInZones(['hand'], ['幻影の総攻撃', '万象を映す魔神']), 30)], forecastText: '次のターン、千の仮面が踊る' });
+
+  // ---- 竜のエリート（2026-11）: 各幕1体。禁忌の竜は使わない -------------------------------------------
+  const dragonsOnBoard = function (n) { return function (g, e) { return g.monstersOf(e.idx).filter(function (m) { return g.isDragon(m); }).length >= n; }; };
+  register({ id: 'elite_flute_maiden', name: '竜笛の巫女', tier: 'elite', act: 1, life: 38, lineage: ['accel', 'cycle'], style: 'speed',
+    trumps: ['竜笛'], relics: ['竜笛の首飾り'], introText: '巫女が笛を吹くと、山の向こうから小さな竜が次々に舞い降りた。',
+    teaches: '竜はまとめて出てくる。子竜のうちに数を減らす',
+    deck: [D('竜笛'), D('炎竜の幼体', 3), D('潮騒の子竜', 3), D('竜の卵', 3), D('火種', 2), D('火の粉の妖精', 3), D('火喰い竜'), D('竜の咆哮'), D('溶岩の巨竜'), D('魔力の泉', 2)],
+    hazard: [H(inHand('竜笛'), 40), H(dragonsOnBoard(2), 30), H(inHand('竜の咆哮'), 30)],
+    forecastText: '次のターン、竜の群れが吠える' });
+
+  register({ id: 'elite_mirror_dragoon', name: '鏡鱗の竜騎士', tier: 'elite', act: 2, life: 78, lineage: ['copy', 'chain'], style: 'speed',
+    trumps: ['竜騎士の号令'], relics: ['竜騎士の兜'], introText: '鏡の鱗をまとった竜に、騎士がまたがっている。竜の影まで、同じ顔でこちらを見ていた。',
+    teaches: '幻影の竜も竜。数が増える前に「すべて」に効く効果で片付ける',
+    deck: [D('竜騎士の号令'), D('鏡鱗の子竜', 3), D('雷竜の雛', 3), D('竜の映し身', 2), D('迅雷の竜翼', 2), D('竜の咆哮', 2), D('火花', 2), D('雷纏い'), D('静電気', 2), D('千鏡の幻竜'), D('鏡の破片')],
+    hazard: [H(inHand('竜騎士の号令'), 50), H(dragonsOnBoard(3), 30), H(inHand('迅雷の竜翼'), 20)],
+    forecastText: '次のターン、竜騎士が突撃を命じる' });
+
+  register({ id: 'elite_dragon_tomb', name: '古竜の墓守', tier: 'elite', act: 3, life: 125, lineage: ['doom', 'time'], style: 'specialWin',
+    trumps: ['竜墓の鐘'], relics: ['竜骨の数珠'], introText: '墓守は三本の鍵を鳴らした。地の底で、鎖につながれた何かが寝返りを打つ。',
+    teaches: '封じられし古竜は鍵が3種類そろうと目覚める。鍵か古竜を先に除く',
+    deck: [D('竜墓の鐘'), D('骨竜の幼体', 3), D('眠る時竜', 2), D('墓場の骸骨兵'), D('竜葬の儀'), D('竜の刻', 2), D('封じられし古竜'), D('終末の鍵・第一'), D('終末の鍵・第二'), D('終末の鍵・第三'), D('千年の時竜'), D('大渦の古竜'), D('竜の盟約'), D('呪詛の囁き'), D('砂時計の番人'), D('刻の剥落')],
+    hazard: [H(anyInZones(['hand', 'crests'], ['竜墓の鐘']), 40), H(function (g, e) { return g.distinctKeys(e.idx) >= 2; }, 30), H(function (g, e, p) { return p.curse >= 10; }, 30)],
+    forecastText: '次のターン、古竜が目を覚ます' });
 
   // =====================================================================================
   // ボス（5種）
@@ -328,7 +351,7 @@
     trumps: ['ぜんまい仕掛けの不死鳥', '最後の一周', 'からくり巨兵・終'],
     introText: '歯車の音が止まらない工房。職人は顔も上げずに言った。「あと一周だ」',
     deck: [D('焚べ火の祭壇', 2), D('ぜんまい仕掛けの不死鳥', 2), D('永久機関'), D('最後の一周', 2), D('からくり巨兵・終'),
-      D('火種', 3), D('水鏡の占い', 2), D('知識の泉水', 2), D('全知の雫'), D('渦潮の番人', 2), D('封言の呪文', 2), D('消滅の光'),
+      D('火種', 3), D('水鏡の占い', 2), D('知識の泉水', 2), D('全知の雫'), D('渦潮の番人'), D('火種の子竜'), D('封言の呪文'), D('天井知らず'), D('消滅の光'),
       D('夜明けの暴走炉', 2), D('マナ喰いの小妖精', 2), D('魔力の泉'), D('職人の予備部品', 2), D('からくり人形', 2)],
     hazard: [H(inZones(['crests'], '焚べ火の祭壇'), 40), H(inZones(['hand', 'board'], 'ぜんまい仕掛けの不死鳥'), 30), H(anyInZones(['hand'], ['最後の一周', 'からくり巨兵・終']), 30)],
     forecastText: '次のターン、無限ループを開始する',
@@ -342,7 +365,7 @@
     introText: '空に雷雲が集まっていく。魔術師は指揮棒を構え、まだ振らない。',
     deck: [D('火種', 3), D('火花', 3), D('静電気', 2), D('迅雷の閃き', 2), D('夜明けの暴走炉', 2),
       D('嵐の指揮者'), D('嵐の大精霊'), D('雷紋の印'), D('無限の坩堝'), D('終曲・万雷', 2), D('嵐の化身'), D('雷撃の連打', 2),
-      D('逆流する稲妻', 2), D('古文書の発掘'), D('封言の呪文'), D('渦潮の番人'), D('嵐の前奏曲', 2), D('稲妻の楽団員', 2)],
+      D('逆流する稲妻', 2), D('雷の申し子'), D('封言の呪文'), D('迅雷の獅子'), D('嵐の前奏曲', 2), D('稲妻の楽団員', 2)],
     hazard: [H(handFull, 30), H(anyInZones(['hand'], ['無限の坩堝', '嵐の指揮者']), 30), H(anyInZones(['hand'], ['終曲・万雷', '嵐の化身']), 30), H(inZones(['board'], '嵐の大精霊'), 10)],
     forecastText: '次のターン、嵐が来る',
     enrage: { threshold: 0.5, text: '嵐の余韻：連鎖数の半分が次のターンに持ち越される', apply: function (game, idx) { installRelic(game, idx, ENRAGE.boss2); } },
@@ -355,7 +378,7 @@
     introText: '街の時計はすべて逆回り。泥棒はこちらの懐中時計を、もう手にしていた。',
     deck: [D('時盗みの魔女'), D('奪われた砂時計', 3), D('時の王冠'), D('刻限の処刑', 2), D('時を喰らう獣'),
       D('時限爆弾', 2), D('未来の手紙', 2), D('時の歯車', 2), D('時間停止', 2), D('歴史改変'), D('砂時計の番人', 2),
-      D('火種', 2), D('知識の泉水', 2), D('過去からの来訪者', 2), D('時の前借り'), D('くすねた一秒', 2), D('影の掏摸', 2)],
+      D('火種', 2), D('停滞の番人'), D('刻の剥落'), D('過去からの来訪者', 2), D('時の前借り'), D('くすねた一秒', 2), D('影の掏摸', 2)],
     hazard: [H(inZones(['board'], '時盗みの魔女'), 40), H(inHand('奪われた砂時計'), 30), H(anyInZones(['hand', 'board'], ['刻限の処刑', '時を喰らう獣']), 20), H(inZones(['timed'], '時限爆弾'), 10)],
     forecastText: '次のターン、時が止まる',
     enrage: { threshold: 0.5, text: '時間の窃盗：3ターンに1回、相手のターンを奪う', apply: function (game, idx) { game.players[idx].flags.turnsUntilTheft = 3; installRelic(game, idx, ENRAGE.boss3); } },
@@ -368,7 +391,7 @@
     introText: '静かな博物館。棚にはまだ空きがある。蒐集者は、こちらのデッキを値踏みした。',
     deck: [D('終末の鍵・第一', 2), D('終末の鍵・第二', 2), D('終末の鍵・第三', 2), D('陳列棚の鍵', 2),
       D('蒐集の目録'), D('骨の祭司', 2), D('水鏡の占い', 2), D('全知の雫'), D('最後の展示'), D('標本の巨人'),
-      D('封言の呪文', 2), D('渦潮の番人', 2), D('墓場の骸骨兵', 2), D('呪いを運ぶ鴉'), D('深淵の問い'), D('火種', 2), D('蒐集家の網', 2), D('ガラス瓶の妖精', 2)],
+      D('封言の呪文', 2), D('渦潮の番人', 2), D('墓場の骸骨兵', 2), D('呪いを運ぶ鴉'), D('深淵の問い'), D('封印の巨像'), D('呪文喰らいの魔獣'), D('蒐集家の網', 2), D('ガラス瓶の妖精', 2)],
     hazard: [H(function (g, e) { return g.distinctKeys(e.idx) >= 1; }, 20), H(function (g, e) { return g.distinctKeys(e.idx) >= 2; }, 20),
       H(function (g, e) { return g.distinctKeys(e.idx) >= 3; }, 20), H(function (g, e) { return g.distinctKeys(e.idx) >= 4; }, 20), H(inHand('最後の展示'), 20)],
     forecastText: '次のターン、展示が完成する',

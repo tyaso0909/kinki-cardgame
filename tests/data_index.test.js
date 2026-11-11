@@ -17,7 +17,7 @@
     ok(G.Data.tabooCards().some(function (d) { return d.id === 'gen_30'; }));
     ok(G.Data.tabooCards().every(function (d) { return d.rarity === 'taboo'; }));
     eq(G.Data.bossTrumps(1).length, 3); eq(G.Data.bossTrumps(5).length, 4); eq(G.Data.bossAuxCards(3).length, 2); eq(G.Data.bossAuxCards(5).length, 1);
-    eq(G.Data.relicsBy('start').length, 6); eq(G.Data.relicsBy('enemy').filter(function (r) { return r.enemyOnly; }).length, 15);
+    eq(G.Data.relicsBy('start').length, 6); eq(G.Data.relicsBy('enemy').filter(function (r) { return r.enemyOnly; }).length, 18);
     eq(G.Data.relicIdByName('ループの螺子'), 'relic_loop_screw');
   });
 

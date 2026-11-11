@@ -284,4 +284,31 @@
       const list = ctx.me.board.slice();
       for (let i = 0; i < list.length; i++) await ctx.createPhantom(list[i], ctx.me, { count: 2, triggerSummon: true });
     } } });
+
+  // ---- 竜のエリート（2026-11）: 竜笛の巫女 / 鏡鱗の竜騎士 / 古竜の墓守 -----------------------------
+  function isDragonInst(inst) { const d = DB.tryGet(inst.defId); return !!(d && d.tags.indexOf('dragon') >= 0); }
+  trump({ id: 'elite7_01', name: '竜笛', type: 'spell', lineage: 'accel', role: 'engine', cost: 1,
+    text: '山札から竜を2枚手札に加え、手札の竜すべてのコスト-1',
+    effects: { onPlay: async function (ctx) {
+      const pred = function (c, d) { return d.tags.indexOf('dragon') >= 0 && !d.uncastable; };
+      for (let i = 0; i < 2; i++) { const got = await ctx.tutor(pred, ctx.me, { prompt: '手札に加える竜を選ぶ' }); if (!got) break; }
+      const list = ctx.me.hand.filter(function (c) { return isDragonInst(c) && !DB.get(c.defId).uncastable; });
+      list.forEach(function (c) { c.costMod = (c.costMod || 0) - 1; });
+      if (list.length) ctx.log('手札の竜' + list.length + '枚のコスト-1');
+    } } });
+
+  trump({ id: 'elite8_01', name: '竜騎士の号令', type: 'spell', lineage: 'copy', role: 'finisher', cost: 2, tags: ['finisher'],
+    text: '自分の竜すべて（幻影を含む）に+2/+2と速攻',
+    effects: { onPlay: async function (ctx) {
+      const list = ctx.monstersOf(ctx.me).filter(isDragonInst);
+      if (!list.length) { ctx.log('場に竜がいない'); return; }
+      for (let i = 0; i < list.length; i++) { ctx.addKeyword(list[i], 'rush'); await ctx.buff(list[i], { atk: 2, hp: 2 }); }
+    } } });
+
+  trump({ id: 'elite9_01', name: '竜墓の鐘', type: 'crest', lineage: 'doom', role: 'engine', cost: 3,
+    text: '自分の竜が破壊されるたび、相手に呪詛2',
+    effects: { onMonsterDestroyed: async function (ctx, ev) {
+      if (ev.who !== ctx.owner.idx || !ev.card || !isDragonInst(ev.card)) return;
+      await ctx.addCurse(ctx.game.players[1 - ctx.owner.idx], 2);
+    } } });
 })(globalThis.G = globalThis.G || {});
