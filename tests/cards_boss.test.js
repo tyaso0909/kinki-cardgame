@@ -222,9 +222,10 @@
     const g3 = await T.sandbox({ p0: { hand: ['elite5_01'], mana: 10, deck: deck(5) }, p1: { crests: ['gen_14'], deck: deck(5) } });
     await play(g3, 0, 'elite5_01'); await g3.endTurn(0); eq(g3.active, 1, '反魔の護符 blocks 緊急停止');
 
-    const g4 = await T.sandbox({ p0: { hand: ['elite6_01'], board: ['tc_sprite', 'tc_vanilla'], mana: 4 } });
+    const g4 = await T.sandbox({ p0: { hand: ['elite6_01'], board: ['tc_sprite', 'tc_vanilla'], mana: 4, deck: ['basic_01', 'basic_01', 'basic_01'] }, p1: { deck: ['basic_01', 'basic_01', 'basic_01'] } });
     await play(g4, 0, 'elite6_01');
     eq(g4.players[0].phantoms.length, 4); eq(g4.players[0].mana, 4, 'two sprite phantoms fired onSummon (+2 each)');
-    await g4.endTurn(0); eq(g4.players[0].phantoms.length, 0);
+    await g4.endTurn(0); eq(g4.players[0].phantoms.length, 4, 'phantoms stand through the opponent turn');
+    await g4.endTurn(1); eq(g4.players[0].phantoms.length, 0);
   });
 })(globalThis.G = globalThis.G || {});

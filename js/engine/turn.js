@@ -148,15 +148,21 @@
     if (!this.status(pIdx, 'chainPersists')) { p.chain = 0; this.emit('chain', { who: pIdx, chain: 0 }); }
     // mana cleared (unless 天井なき空)
     if (!this.status(pIdx, 'manaPersists')) { p.mana = 0; this.emit('manaChange', { who: pIdx, mana: 0, delta: 0 }); }
-    // phantoms vanish
-    const persistAll = this.status(pIdx, 'phantomsPersist');
-    const phs = p.phantoms.slice();
+    // phantoms vanish at the end of their owner's OPPONENT's turn — they attack on the owner's turn and stand
+    // (and block, and can be attacked) through the opponent's next turn. A phantom made during this very turn
+    // (e.g. 分裂する粘体 splitting while defending) waits for the end of the opponent's next turn.
+    const oIdx = 1 - pIdx;
+    const op = this.players[oIdx];
+    const persistAll = this.status(oIdx, 'phantomsPersist');
+    const phs = op.phantoms.slice();
+    const octx = this.makeCtx(oIdx, null);
     let vanished = 0;
     for (let i = 0; i < phs.length; i++) {
       if (persistAll || phs[i].persistent) continue;
-      ctx.vanishPhantom(phs[i]); vanished++;
+      if (phs[i].bornTurn != null && phs[i].bornTurn >= this.turn) continue;
+      octx.vanishPhantom(phs[i]); vanished++;
     }
-    if (vanished) this.addLog(p.name + 'の幻影' + vanished + '体が消えた');
+    if (vanished) this.addLog(op.name + 'の幻影' + vanished + '体が消えた');
     // end-of-turn buffs expire
     for (let i = 0; i < 2; i++) this.monstersOf(i).forEach(function (m) {
       m.buffs = m.buffs.filter(function (b) { return !(b.until && b.until.player === pIdx); });

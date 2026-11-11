@@ -279,7 +279,7 @@
   });
 
   test('phantoms: cap 30, vanish at end of turn, no onSummon by default, phantomSummonEffects enables it, persist', async function () {
-    const g = await T.sandbox({ p0: { board: ['t_sprite'], mana: 0 } });
+    const g = await T.sandbox({ p0: { board: ['t_sprite'], mana: 0, deck: ['t_vanilla', 't_vanilla', 't_vanilla'] }, p1: { deck: ['t_vanilla', 't_vanilla', 't_vanilla'] } });
     const ctx = g.makeCtx(0, null);
     const sprite = g.players[0].board[0];
     const made = await ctx.createPhantom(sprite, 0, { count: 40 });
@@ -287,12 +287,14 @@
     eq(g.players[0].mana, 0, 'no onSummon for phantoms');
     eq(g.monstersOf(0).length, 31);
     await g.endTurn(0);
-    eq(g.players[0].phantoms.length, 0, 'vanished');
+    eq(g.players[0].phantoms.length, 30, 'own turn end: phantoms stay');
+    await g.endTurn(1);
+    eq(g.players[0].phantoms.length, 0, 'vanished at the end of the opponent turn');
     eq(g.players[0].grave.length, 0, 'phantoms leave no grave');
     const g2 = await T.sandbox({ p0: { hand: ['t_twins'], crests: ['t_crest_persist'], mana: 5 } });
     await play(g2, 0, 't_twins');
     eq(g2.players[0].phantoms.length, 1, 'twins makes one phantom; the phantom has no onSummon');
-    await g2.endTurn(0);
+    await g2.endTurn(0); await g2.endTurn(1);
     eq(g2.players[0].phantoms.length, 1, 'phantoms persist with 残像');
     ok(g2.players[0].phantoms[0].persistent);
   });

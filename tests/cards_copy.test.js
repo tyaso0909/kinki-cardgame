@@ -79,7 +79,9 @@
     eq(guards.length, 2);
     eq(g.players[0].board.length, 3, 'phantoms do not use board slots');
     await g.endTurn(0);
-    eq(g.players[0].phantoms.length, 0, 'vanished');
+    eq(g.players[0].phantoms.length, 5, 'still there on the opponent turn');
+    await g.endTurn(1);
+    eq(g.players[0].phantoms.length, 0, 'vanished at the end of the opponent turn');
   });
 
   test('影の群狼: damage per own monster incl. phantoms', async function () {

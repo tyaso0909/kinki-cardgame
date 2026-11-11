@@ -215,7 +215,7 @@
     // 13
     {
       id: 'copy_13', name: '消えない残像', type: 'crest', lineage: 'copy', role: 'engine', rarity: 'common',
-      cost: 1, text: '自分の幻影はターン終了時に消えない',
+      cost: 1, text: '自分の幻影は相手のターン終了時に消えない',
       effects: { grants: [{ key: 'phantomsPersist', value: true }] }
     },
     // 14

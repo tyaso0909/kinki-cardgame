@@ -354,6 +354,7 @@
       if (src) { ph.atk = src.atk; ph.hp = src.hp; ph.maxHp = src.maxHp; ph.keywords = src.keywords.slice(); ph.buffs = src.buffs.map(util.deepClone); }
       if (opts.keywords) opts.keywords.forEach(function (k) { if (ph.keywords.indexOf(k) < 0) ph.keywords.push(k); });
       if (opts.persistent || g.status(p.idx, 'phantomsPersist')) ph.persistent = true;
+      ph.bornTurn = g.turn; // vanishes at the end of the first opponent turn that starts after this (turn.js endTurn)
       const res = await this.summon(ph, p, { asPhantom: true, keepStats: true, triggerSummon: opts.triggerSummon });
       if (!res) break;
       p.stats.phantomsCreated++;
