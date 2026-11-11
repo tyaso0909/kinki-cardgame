@@ -206,7 +206,11 @@
     const n = p.hand.length;
     p.hand.forEach((c, i) => {
       const pl = byUid.get(c.uid);
-      const el = ui.renderCard(c, {
+      // monsters whose stats change in hand (火種の子竜: +cost/+cost) show their real stats
+      const cd = G.CardDB.tryGet(c.defId);
+      const shown = cd && cd.type === 'monster' && !cd.xStats && cd.effects && cd.effects.dynamicStats
+        ? Object.assign({}, c, { atk: game.atkOf(c), hp: game.maxHpOf(c), maxHp: game.maxHpOf(c) }) : c;
+      const el = ui.renderCard(shown, {
         size: view.handSize || 's',
         cost: pl ? pl.cost : (typeof game.costOf === 'function' ? game.costOf(0, c) : undefined),
         onClick: (x, e, cardEl) => view.onCard(c, cardEl, 'hand'),

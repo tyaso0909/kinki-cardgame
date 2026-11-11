@@ -358,6 +358,11 @@
     await play(g, 0, 'accel_35');
     eq(g.players[0].mana, 4);
     eq(g.costOf(0, byDef(g.players[0].hand, 'accel_35')), 2);
+    // stats rise by the card's own cost: 0 → 1/1, 1 → 2/2, in hand 2 → 3/3
+    const board = g.players[0].board.filter(function (m) { return m.defId === 'accel_35'; }).map(function (m) { return g.atkOf(m) + '/' + g.hpOf(m); });
+    eq(board.join(','), '1/1,2/2');
+    const inHand = byDef(g.players[0].hand, 'accel_35');
+    eq(g.atkOf(inHand) + '/' + g.maxHpOf(inHand), '3/3');
   });
 
   test('写本喰いの紙魚: draws its own 朧 copy; with 大図書館の司書長 it keeps going', async function () {

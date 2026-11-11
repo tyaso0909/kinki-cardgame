@@ -102,3 +102,4 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Three dragon elites (one per act): 竜笛の巫女 (act 1, 38), 鏡鱗の竜騎士 (act 2, 78), 古竜の墓守 (act 3, 125). Trumps 竜笛 / 竜騎士の号令 / 竜墓の鐘 (cards_boss.js, elite7–9), enemy relics 竜笛の首飾り / 竜騎士の兜 / 竜骨の数珠, combos elite_flute / elite_dragoon / elite_tomb.
 - Enemies never use 禁忌 (taboo/uncastable) cards nor 不可侵の巨神・終末の獣・縮小の呪文・巨人化の秘薬・竜狩りの大弩・重力の谷 (tests/enemy_dragon.test.js).
 - 2026-11: the run's first pack choice never offers 妨害パック (`G.Packs.offer` option `exclude`); it can appear from the 2nd pick on.
+- 2026-11: 火種の子竜 gains +X/+X where X = its own cost (printed 0 + costMod), via dynamicStats; the battle hand shows real stats for dynamicStats monsters.

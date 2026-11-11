@@ -297,11 +297,17 @@
       } } },
     { id: 'accel_35', name: '火種の子竜', type: 'monster', lineage: 'accel', role: 'fuel', rarity: 'rare',
       cost: 0, atk: 1, hp: 1, tags: ['dragon', 'loopPart'],
-      text: '1/1。召喚時、マナ+1。コストが1多い同名の朧カードを手札に加える',
-      effects: { onSummon: async function (ctx) {
-        await ctx.gainMana(1);
-        await ctx.createOboro('accel_35', ctx.me, 'hand', { costMod: (ctx.card.costMod || 0) + 1 });
-      } } },
+      text: '1/1。このカードのコスト分、攻撃と体力が上がる。召喚時、マナ+1。コストが1多い同名の朧カードを手札に加える',
+      effects: {
+        // +X/+X where X = this card's own cost (printed 0 + its cost modifier; the 朧 copies cost 1, 2, 3...)
+        dynamicStats: function (game, inst) {
+          const x = Math.max(0, 0 + (inst.costMod || 0));
+          return { atk: x, hp: x };
+        },
+        onSummon: async function (ctx) {
+          await ctx.gainMana(1);
+          await ctx.createOboro('accel_35', ctx.me, 'hand', { costMod: (ctx.card.costMod || 0) + 1 });
+        } } },
     { id: 'cycle_30', name: '写本喰いの紙魚', type: 'monster', lineage: 'cycle', role: 'fuel', rarity: 'rare',
       cost: 1, atk: 1, hp: 1, tags: ['loopPart'],
       text: '1/1。召喚時、同名の朧カードを山札の一番上に置き、カードを1枚引く',
