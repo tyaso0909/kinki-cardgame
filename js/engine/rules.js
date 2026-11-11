@@ -18,7 +18,8 @@
     sealWildBonus: 'sum', damageTakenDelta: 'sum', maxManaGainDelta: 'sum', costDelta: 'sum',
     spellCostDelta: 'sum', chainAtTurnStart: 'sum', initialHandDelta: 'sum', reserveLasts: 'max',
     extraCostAfterN: 'last', curseRedirectToMonsterUid: 'last', firstSpellStolenBy: 'last',
-    handLimitDelta: 'sum', monsterAtkDelta: 'sum', atkPerHandCard: 'sum', curseShrink: 'sum'
+    handLimitDelta: 'sum', monsterAtkDelta: 'sum', atkPerHandCard: 'sum', curseShrink: 'sum',
+    dragonWard: 'or', phantomRush: 'or'
   };
   const STATUS_DEFAULT = {
     spellMultiplier: 1, summonMultiplier: 1, allEffectsMultiplier: 1, chainMultiplier: 1, timedTickRate: 1,
@@ -270,6 +271,7 @@
     const def = G.CardDB.get(inst.defId);
     const from = inst.zone;
     if (from !== 'hand' && from !== 'grave') return { ok: false, reason: 'notInHandOrGrave' };
+    if (def.uncastable) return { ok: false, reason: 'uncastable' }; // 禁忌の竜: only its own hand effect puts it out
     if (inst.owner !== p.idx) return { ok: false, reason: 'notOwner' };
     if (from === 'grave') {
       const gravePlayable = this.status(p.idx, 'gravePlayable');
@@ -356,14 +358,29 @@
     return h;
   };
   Game.prototype.hpOf = function (inst) { return this.maxHpOf(inst) - inst.damage; };
-  Game.prototype.hasKeyword = function (inst, kw) { return inst.keywords.indexOf(kw) >= 0; };
+  // Effective keywords: printed/added keywords + this-turn keywords (迅雷の竜翼) + keywords granted by
+  // permanents (竜の盟約: dragons have 加護; 禁忌の万華竜: phantoms have 速攻).
+  Game.prototype.isDragon = function (inst) { const d = G.CardDB.tryGet(inst.defId); return !!(d && d.tags.indexOf('dragon') >= 0); };
+  Game.prototype.keywordsOf = function (inst) {
+    const out = (inst.keywords || []).slice();
+    const add = function (k) { if (out.indexOf(k) < 0) out.push(k); };
+    if (inst.flags && inst.flags.tempKw) inst.flags.tempKw.kws.forEach(add);
+    if ((inst.zone === 'board' || inst.zone === 'phantoms') && inst.owner !== undefined && this.players[inst.owner]) {
+      if (this.isDragon(inst) && this.status(inst.owner, 'dragonWard')) add('ward');
+      if (inst.isPhantom && this.status(inst.owner, 'phantomRush')) add('rush');
+    }
+    return out;
+  };
+  Game.prototype.hasKeyword = function (inst, kw) {
+    if (inst.keywords.indexOf(kw) >= 0) return true;
+    return this.keywordsOf(inst).indexOf(kw) >= 0;
+  };
   // 連撃 (double): 2 attacks per turn
-  Game.prototype.attacksPerTurn = function (inst) { return inst.keywords.indexOf('double') >= 0 ? 2 : 1; };
+  Game.prototype.attacksPerTurn = function (inst) { return this.hasKeyword(inst, 'double') ? 2 : 1; };
   // 加護 (ward): can't be chosen by the opponent's effects. `actorIdx` = whose effect is choosing.
   Game.prototype.isWardedFrom = function (inst, actorIdx) {
     return !!(inst && inst.keywords && inst.owner !== undefined && actorIdx !== undefined && actorIdx !== null &&
-      inst.owner !== actorIdx && inst.keywords.indexOf('ward') >= 0 &&
-      (inst.zone === 'board' || inst.zone === 'phantoms'));
+      inst.owner !== actorIdx && (inst.zone === 'board' || inst.zone === 'phantoms') && this.hasKeyword(inst, 'ward'));
   };
 
   Game.prototype.monstersOf = function (who) {
@@ -377,6 +394,9 @@
     if (inst.attacksLeft <= 0) return false;
     if (this.status(pIdx, 'cannotAttack')) return false;
     if (inst.flags && inst.flags.cannotAttack) return false;
+    // per-card attack condition (封じられし古竜: needs 3 kinds of keys)
+    const adef = G.CardDB.tryGet(inst.defId);
+    if (adef && typeof adef.effects.attackCondition === 'function' && !adef.effects.attackCondition(this, inst)) return false;
     if (inst.summonedTurn === this.turn && !this.hasKeyword(inst, 'rush')) {
       // 突進 (charge): on the turn it arrives it may attack monsters only
       if (!this.hasKeyword(inst, 'charge')) return false;

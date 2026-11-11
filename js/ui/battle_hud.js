@@ -213,6 +213,8 @@
         selected: view.isSelected(c.uid),
       });
       el.classList.add(pl ? 'playable' : 'unplayable');
+      // a usable hand effect (禁忌の竜): mark the card so the player knows to tap it
+      if ((view.abilities || []).some(function (a) { return a.uid === c.uid; })) { el.classList.add('has-hand-ab'); el.appendChild(h('span', { class: 'bt-handab' }, '効果')); }
       if (view.isHighlighted(c.uid)) el.classList.add('hl');
       el.style.setProperty('--i', String(i));
       el.style.setProperty('--n', String(n));

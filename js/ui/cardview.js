@@ -101,12 +101,15 @@
   // Terms explained in the card detail when the rules text uses them (or the card itself is one).
   const TERMS = [
     { word: '朧', rule: 'この戦闘のあいだだけのカード。戦闘が終わると消え、デッキには残らない' },
+    { word: '竜', rule: '竜のカード。「竜」と書かれた効果の対象になる', chip: 'dragon' },
+    { word: '禁忌召喚', rule: '普通には出せない（コスト∞）。手札にあるとき1ターンに1回、場にいるこのカードと同じ系統のモンスター4体（相手のモンスター・幻影・加護を持つものも可）を破壊して、このカードの朧カードを場に出す。カード自体は手札に残る' },
   ];
   ui.TERMS = TERMS;
   ui.KEYWORDS = KEYWORDS;
   function keywordChips(def, inst) {
     const chips = [];
     const kws = (inst && inst.keywords) || def.keywords || [];
+    if ((def.tags || []).indexOf('dragon') >= 0) chips.push(['竜', 'kw-dragon']);
     KEYWORDS.forEach(function (k) { if (kws.includes(k.id)) chips.push([k.name, 'kw-' + k.id]); });
     if (def.reserve) chips.push(['予約', 'kw-reserve']);
     if (def.reprise != null && def.reprise !== false) chips.push(['再演' + def.reprise, '']);
@@ -118,7 +121,7 @@
   }
 
   // Rules text: emphasise trigger words so the eye finds the shape of the effect.
-  const EMPH = /(召喚時|破壊時|常在|展開時|予約|再演|時限\d+|追加ターン|呪詛|幻影|連鎖数|除外|封印ゾーン|朧)/g;
+  const EMPH = /(召喚時|破壊時|常在|展開時|予約|再演|時限\d+|追加ターン|呪詛|幻影|連鎖数|除外|封印ゾーン|禁忌召喚|朧)/g;
   function textNodes(text) {
     const out = [];
     let last = 0;
@@ -231,9 +234,9 @@
 
     // cost
     if (opts.showCost !== false && def.type) {
-      const cost = opts.cost != null ? opts.cost : def.cost;
-      const isX = cost === 'X';
-      frame.appendChild(h('div', { class: 'card-cost' + (isX ? ' x' : ''), title: 'コスト' }, h('span', null, isX ? 'X' : String(cost == null ? 0 : cost))));
+      const cost = def.uncastable ? '∞' : opts.cost != null ? opts.cost : def.cost;
+      const isX = cost === 'X' || cost === '∞';
+      frame.appendChild(h('div', { class: 'card-cost' + (isX ? ' x' : ''), title: def.uncastable ? 'コスト∞（普通には出せない）' : 'コスト' }, h('span', null, isX ? cost : String(cost == null ? 0 : cost))));
     }
     // rarity pip
     frame.appendChild(h('div', { class: 'card-rar', title: RARITY[rarity] }, RARITY_PIP[rarity] || ''));
@@ -300,14 +303,17 @@
       h('dt', null, '種類'), h('dd', null, TYPE[def.type] || def.type || '—'),
       h('dt', null, 'レアリティ'), h('dd', null, RARITY[def.bossOnly ? 'boss' : def.rarity] || '—'),
       def.role ? h('dt', null, '役割') : null, def.role ? h('dd', null, ROLE[def.role] || def.role) : null,
-      h('dt', null, 'コスト'), h('dd', { class: 't-num' }, def.cost === 'X' ? 'X' : String(def.cost == null ? 0 : def.cost)),
+      h('dt', null, 'コスト'), h('dd', { class: 't-num' }, def.uncastable ? '∞（普通には出せない）' : def.cost === 'X' ? 'X' : String(def.cost == null ? 0 : def.cost)),
       def.type === 'monster' ? h('dt', null, '攻撃／体力') : null,
       def.type === 'monster' ? h('dd', { class: 't-num' }, def.xStats ? 'X / X' : String(def.atk) + ' / ' + String(def.hp)) : null,
     );
     const kwChips = keywordChips(def, isInst(x) ? x : null);
     const kwList = ((isInst(x) && x.keywords) || def.keywords || []);
     const glossary = KEYWORDS.filter(function (k) { return kwList.includes(k.id); }).map(function (k) { return { name: k.name, rule: k.rule }; })
-      .concat(TERMS.filter(function (t) { return (def.text || '').indexOf(t.word) >= 0 || (t.word === '朧' && isInst(x) && x.oboro); }).map(function (t) { return { name: t.word, rule: t.rule }; }));
+      .concat(TERMS.filter(function (t) {
+        if (t.chip) return (def.tags || []).indexOf(t.chip) >= 0;
+        return (def.text || '').indexOf(t.word) >= 0 || (t.word === '朧' && isInst(x) && x.oboro);
+      }).map(function (t) { return { name: t.word, rule: t.rule }; }));
     const body = h('div', { class: 'card-detail lin-' + lineage },
       renderCard(def, { size: 'l' }),
       facts,

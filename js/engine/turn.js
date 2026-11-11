@@ -168,6 +168,7 @@
     // end-of-turn buffs expire
     for (let i = 0; i < 2; i++) this.monstersOf(i).forEach(function (m) {
       m.buffs = m.buffs.filter(function (b) { return !(b.until && b.until.player === pIdx); });
+      if (m.flags.tempKw && m.flags.tempKw.until === pIdx) delete m.flags.tempKw;
     });
     // reserves targeting this player expire; statuses bound to this turn expire
     await this.expireReserves(pIdx);

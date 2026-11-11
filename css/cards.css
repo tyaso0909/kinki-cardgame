@@ -586,3 +586,5 @@ html:not([data-theme="light"]) .card-detail .detail-kwrules dt { color: color-mi
 .card.oboro .card-art { filter: blur(.3px) saturate(.75) brightness(1.08); }
 .card.oboro::after { content: "朧"; position: absolute; right: 0.5em; top: 2.9em; font-size: 0.8em; color: #cfd8ff; font-family: var(--font-title); z-index: 3; text-shadow: 0 0 6px rgba(207,216,255,.7); }
 .kw.kw-oboro { border-style: dashed; }
+.kw.kw-dragon { border-color: color-mix(in srgb, #d9a441 75%, transparent); color: #e8c27a; }
+html[data-theme="light"] .kw.kw-dragon { color: #8a5a00; }

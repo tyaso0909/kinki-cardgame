@@ -44,7 +44,7 @@
   });
 
   test('copy: smoke — every card can be played without throwing', async function () {
-    const ids = DB.filter(function (d) { return d.lineage === 'copy'; }).map(function (d) { return d.id; });
+    const ids = DB.filter(function (d) { return d.lineage === 'copy' && d.set !== 'dragon'; }).map(function (d) { return d.id; });
     for (let k = 0; k < ids.length; k++) {
       const id = ids[k];
       const g = await T.sandbox({

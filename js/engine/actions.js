@@ -829,6 +829,17 @@
     return Promise.resolve(true);
   };
   P.addKeyword = function (inst, kw) { if (inst.keywords.indexOf(kw) < 0) inst.keywords.push(kw); };
+  // Keywords until the end of this turn (迅雷の竜翼). Gaining 連撃 mid-turn adds the extra attack now.
+  P.addKeywordsThisTurn = function (inst, kws) {
+    const g = this.game;
+    const hadDouble = g.hasKeyword(inst, 'double');
+    const t = inst.flags.tempKw || { kws: [], until: g.active };
+    kws.forEach(function (k) { if (t.kws.indexOf(k) < 0) t.kws.push(k); });
+    t.until = g.active;
+    inst.flags.tempKw = t;
+    if (!hadDouble && kws.indexOf('double') >= 0 && inst.owner === g.active) inst.attacksLeft += 1;
+    g.emit('buff', { uid: inst.uid, keywords: kws.slice() });
+  };
   P.removeKeyword = function (inst, kw) { util.removeFrom(inst.keywords, kw); };
 
   // ---- choices ------------------------------------------------------------------
@@ -862,7 +873,7 @@
       }
     });
     // 加護: monsters that can't be chosen by this (the opponent's) effect
-    list = list.filter(function (c) { return !g.isWardedFrom(c, meIdx); });
+    if (!spec.ignoreWard) list = list.filter(function (c) { return !g.isWardedFrom(c, meIdx); });
     if (spec.filter) list = list.filter(function (c) { return spec.filter(self, c); });
     return list;
   };

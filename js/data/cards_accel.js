@@ -192,9 +192,10 @@
       effects: {
         onSummon: async function (ctx) {
           if (ctx.me.board.length >= ctx.status(ctx.me, 'maxBoard')) { ctx.log('場がいっぱいで出せない'); return; }
-          const cands = ctx.me.hand.filter(function (c) { return isMonsterDef(c); });
+          // 禁忌の竜 (uncastable) can't be put out this way
+          const cands = ctx.me.hand.filter(function (c) { return isMonsterDef(c) && !DB.get(c.defId).uncastable; });
           if (!cands.length) { ctx.log('手札にモンスターがいない'); return; }
-          const picked = await ctx.pick({ kind: 'handCard', side: 'ally', count: 1, filter: function (c, inst) { return isMonsterDef(inst); }, prompt: 'コストを払わずに出すモンスターを選ぶ' });
+          const picked = await ctx.pick({ kind: 'handCard', side: 'ally', count: 1, filter: function (c, inst) { return isMonsterDef(inst) && !DB.get(inst.defId).uncastable; }, prompt: 'コストを払わずに出すモンスターを選ぶ' });
           const m = picked[0];
           if (!m) return;
           ctx.log('伝令が' + ctx.nameOf(m) + 'を呼び出した');

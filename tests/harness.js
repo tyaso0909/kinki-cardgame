@@ -47,7 +47,7 @@
     'js/engine/defs.js', 'js/engine/fx.js', 'js/engine/state.js', 'js/engine/rules.js', 'js/engine/actions.js',
     'js/engine/play.js', 'js/engine/turn.js', 'js/engine/loop.js', 'js/engine/game.js',
     'js/data/cards_basic.js', 'js/data/cards_accel.js', 'js/data/cards_cycle.js', 'js/data/cards_copy.js', 'js/data/cards_chain.js',
-    'js/data/cards_time.js', 'js/data/cards_doom.js', 'js/data/cards_generic.js', 'js/data/cards_boss.js', 'js/data/cards_ext.js',
+    'js/data/cards_time.js', 'js/data/cards_doom.js', 'js/data/cards_generic.js', 'js/data/cards_boss.js', 'js/data/cards_ext.js', 'js/data/cards_dragon.js',
     'js/data/relics.js', 'js/data/_index.js', 'js/data/enemies.js', 'js/data/events.js', 'js/data/texts.js',
     'js/ai/chooser.js', 'js/ai/combos.js', 'js/ai/ai.js',
     'js/run/packs.js', 'js/run/map.js', 'js/run/shop.js', 'js/run/run.js', 'js/run/rewards.js',

@@ -821,3 +821,10 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
 .bt-board .card.is-untouchable .card-frame { outline: 1px dashed color-mix(in srgb, var(--time) 70%, transparent); outline-offset: 3px; }
 .bt-kwb .kwb-charge { border-color: color-mix(in srgb, var(--accel) 50%, var(--ink-faint)); }
 .bt-kwb .kwb-oboro { border-style: dashed; color: #cfd8ff; }
+/* hand card whose hand effect can be used now (禁忌の竜) */
+.bt-hand .card.has-hand-ab { box-shadow: 0 0 0 2px var(--taboo, #c23a6b), 0 0 14px color-mix(in srgb, var(--taboo, #c23a6b) 60%, transparent); }
+.bt-handab {
+  position: absolute; top: 24%; left: 50%; transform: translateX(-50%); z-index: 4;
+  font-size: 10px; line-height: 1; padding: 2px 6px; border-radius: 6px; white-space: nowrap;
+  background: var(--taboo, #c23a6b); color: #fff3f7; pointer-events: none;
+}

@@ -89,3 +89,9 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Max mana has no cap (by design).
 - 突進 `charge`: on its summon turn (without 速攻) a monster may attack monsters only — `Game.attackTargetsOf(pIdx, inst)` (used by getAttackers, attack(), loop replay); `canAttackWith` is false when no enemy monster can be attacked.
 - 朧 (oboro): `ctx.createOboro(defId, who, 'deck'|'deckTop'|'hand', {costMod})` makes a normal card (not isCopy: it goes to the grave etc.) flagged `inst.oboro`; `G.Data.restoreVault` skips it, so it never reaches the run deck. UI: `.card.oboro` (朧 mark, hazy), board badge, card-detail term (`G.ui.TERMS`).
+
+## Dragons (cards_dragon.js, 26 cards; `def.set = 'dragon'`)
+- 竜 = `tags: ['dragon']` → 竜 chip + card-detail term. `Game.isDragon(inst)`.
+- Effective keywords: `Game.keywordsOf(inst)` / `hasKeyword` merge printed keywords, this-turn keywords (`inst.flags.tempKw` set by `ctx.addKeywordsThisTurn`, removed at that turn's end) and granted ones (`dragonWard` 竜の盟約, `phantomRush` 禁忌の万華竜). Ward/double checks go through hasKeyword.
+- `def.effects.attackCondition(game, inst)` gates canAttackWith (封じられし古竜).
+- 禁忌の竜: `def.uncastable` (canPlayCard → 'uncastable', cost shown ∞; free-summon effects skip them) and `effects.handAbility` — `getAbilities`/`useAbility` include hand cards. The ability picks 4 same-lineage monsters with `ignoreWard: true` (either side, phantoms count), destroys them and summons a 朧 copy. UI: hand card glows with a 効果 badge; tapping it offers the ability in the prompt bar. Text uses the term 禁忌召喚（〇〇4体） explained in G.ui.TERMS.

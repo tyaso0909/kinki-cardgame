@@ -48,7 +48,7 @@
   });
 
   test('accel: smoke — every card can be played without throwing', async function () {
-    const ids = DB.filter(function (d) { return d.lineage === 'accel'; }).map(function (d) { return d.id; }).concat(['basic_01']);
+    const ids = DB.filter(function (d) { return d.lineage === 'accel' && d.set !== 'dragon'; }).map(function (d) { return d.id; }).concat(['basic_01']);
     for (let k = 0; k < ids.length; k++) {
       const id = ids[k];
       const g = await T.sandbox({

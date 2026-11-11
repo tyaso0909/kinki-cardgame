@@ -326,10 +326,11 @@
     const out = [];
     if (this.active !== pIdx || this.phase !== 'main' || this.winner !== null) return out;
     const self = this;
-    const sources = p.crests.concat(p.board, this.field && this.fieldOwner === pIdx ? [this.field] : []);
+    // hand cards may carry effects.handAbility (禁忌の竜: 手札にあるとき使える効果)
+    const sources = p.crests.concat(p.board, this.field && this.fieldOwner === pIdx ? [this.field] : [], p.hand);
     sources.forEach(function (inst) {
       const def = G.CardDB.get(inst.defId);
-      const ab = def.effects.ability;
+      const ab = inst.zone === 'hand' ? def.effects.handAbility : def.effects.ability;
       if (!ab) return;
       if (ab.oncePerTurn && inst.flags.abilityUsedTurn === self.turn) return;
       const ctx = self.makeCtx(pIdx, inst);
@@ -346,7 +347,7 @@
     const avail = this.getAbilities(pIdx).find(function (a) { return a.uid === sourceUid; });
     if (!inst || !avail) { this.emit('illegal', { action: 'ability', uid: sourceUid }); return { ok: false, reason: 'unavailable' }; }
     const def = G.CardDB.get(inst.defId);
-    const ab = def.effects.ability;
+    const ab = inst.zone === 'hand' ? def.effects.handAbility : def.effects.ability;
     const targets = this.resolveTargets([].concat(targetUids || []), def);
     if (ab.targets && !targets.length) return { ok: false, reason: 'needsTarget' };
     this.recordActionPre({ type: 'ability', defId: def.id, targets: targets.map(function (t) { return t.defId ? { defId: t.defId } : t; }) });

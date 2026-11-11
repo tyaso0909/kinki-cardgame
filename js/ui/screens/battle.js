@@ -32,7 +32,7 @@
     if (!text) { bar.hidden = true; return; }
     bar.hidden = false;
     bar.appendChild(h('span', { class: 'ptext' }, text));
-    (buttons || []).forEach((b) => bar.appendChild(h('button', { class: 'btn sm ' + (b.cls || ''), type: 'button', onClick: b.onClick }, b.label)));
+    (buttons || []).filter(Boolean).forEach((b) => bar.appendChild(h('button', { class: 'btn sm ' + (b.cls || ''), type: 'button', onClick: b.onClick }, b.label)));
   }
   function settings() { try { return ui.settings.get(); } catch (e) { return {}; } }
 
@@ -339,10 +339,13 @@
     clearMode();
     if (!pl) {
       const legal = safe(() => g.canPlayCard(0, inst), { ok: false, reason: '' });
-      const why = { mana: 'マナが足りない', boardFull: '場がいっぱい', duplicateCrest: '同名の紋章がすでにある', cardsPerTurnLimit: 'このターンはもう使えない', sameNamePerTurnLimit: '同名カードは今ターン使えない', canPlay: '今は使えない', noGravePlay: '墓地から使えない' };
+      const why = { uncastable: '普通には出せない', mana: 'マナが足りない', boardFull: '場がいっぱい', duplicateCrest: '同名の紋章がすでにある', cardsPerTurnLimit: 'このターンはもう使えない', sameNamePerTurnLimit: '同名カードは今ターン使えない', canPlay: '今は使えない', noGravePlay: '墓地から使えない' };
       const whyText = why[legal.reason] || '今は使えない';
       S.sel = { uid: inst.uid, kind: 'hand', why: whyText };
-      setPrompt(def.name + '：' + whyText, [
+      // a hand effect (禁忌の竜) can be used even though the card can't be played
+      const handAb = (S.abilities || []).find((a) => a.uid === inst.uid);
+      setPrompt(def.name + '：' + (handAb ? handAb.label + 'ことができる' : whyText), [
+        handAb ? { label: handAb.label, cls: 'primary', onClick: () => { clearMode(); onAbilityTap(inst.uid); } } : null,
         { label: '詳細', cls: '', onClick: () => openDetail(inst.defId, inst.uid) },
         { label: '閉じる', cls: 'ghost', onClick: () => { clearMode(); refresh(); } },
       ]);
