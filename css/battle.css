@@ -796,3 +796,26 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
   .bt-life .bar { display: none; }                   /* number only on the narrowest phones */
   .bt-chain .clabel { display: none; }
 }
+
+/* ---------- keyword badges on board cards (battle_hud kwBadges) ---------- */
+.bt-board .card { position: relative; }
+.bt-kwb {
+  position: absolute; left: 50%; top: 4px; transform: translateX(-50%); z-index: 3;
+  display: flex; gap: 2px; pointer-events: none; white-space: nowrap;
+}
+.bt-kwb i {
+  font-style: normal; font-size: 9px; line-height: 1; letter-spacing: .02em;
+  padding: 2px 4px 2px; border-radius: 6px;
+  background: var(--surface-3); color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink-faint) 60%, transparent);
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.bt-kwb .kwb-rush { border-color: color-mix(in srgb, var(--accel) 70%, transparent); }
+.bt-kwb .kwb-ward { border-color: color-mix(in srgb, var(--focus) 80%, transparent); color: var(--focus); }
+.bt-kwb .kwb-untouchable { border-color: color-mix(in srgb, var(--time) 80%, transparent); color: var(--time); }
+.bt-kwb .kwb-double { border-color: color-mix(in srgb, var(--chain) 80%, transparent); }
+.bt-kwb .kwb-pierce { border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+@media (min-width: 1024px) { .bt-kwb i { font-size: 11px; padding: 2px 6px; } }
+/* 加護: a soft halo; 不可侵: a ghostly double outline (it can't be aimed at) */
+.bt-board .card.is-ward .card-frame { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus) 55%, transparent), 0 0 10px color-mix(in srgb, var(--focus) 30%, transparent); }
+.bt-board .card.is-untouchable .card-frame { outline: 1px dashed color-mix(in srgb, var(--time) 70%, transparent); outline-offset: 3px; }

@@ -30,7 +30,8 @@
     opts = opts || {};
     const p = this.players[pIdx];
     const def = G.CardDB.get(inst.defId);
-    const targets = this.resolveTargets(opts.targets, def);
+    const self = this;
+    const targets = this.resolveTargets(opts.targets, def).filter(function (t) { return !self.isWardedFrom(t, pIdx); });
     const ctxOpts = { invertible: true, choices: opts.choices || {}, targets: targets, isCopy: !!opts.isCopy };
     switch (def.type) {
       case 'spell': {
@@ -301,9 +302,15 @@
       await ctx.damage(opp, atk, { source: attacker });
     } else {
       const tatk = this.atkOf(target);
+      const hpBefore = this.hpOf(target);
       // simultaneous: compute both, then apply
       await ctx.damage(target, atk, { source: attacker });
       if (this.isInPlay(attacker) && tatk > 0) await this.makeCtx(target.owner, target).damage(attacker, tatk, { source: target });
+      // 貫通 (pierce): destroying the defender sends the rest of the damage to its owner
+      if (this.hasKeyword(attacker, 'pierce') && !this.isInPlay(target) && atk > hpBefore && this.winner === null) {
+        this.addLog('貫通：' + (atk - hpBefore) + 'ダメージが' + opp.name + 'に届いた');
+        await ctx.damage(opp, atk - hpBefore, { source: attacker });
+      }
     }
     if (this.isInPlay(attacker) && this.status(pIdx, 'attackTwice') && !attacker.flags.attackedTwice) {
       attacker.flags.attackedTwice = true; attacker.attacksLeft += 1;
@@ -362,7 +369,20 @@
   };
 
   // After any player action: win check + loop detection hook.
+  // Monsters whose HP is 0 or less after a stat change (debuff auras, 呪詛の重み, buffs expiring…) are destroyed.
+  Game.prototype.sweepDead = async function () {
+    for (let i = 0; i < 2 && this.winner === null; i++) {
+      const list = this.monstersOf(i).slice();
+      for (let k = 0; k < list.length; k++) {
+        const m = list[k];
+        if (!this.isInPlay(m) || typeof m.maxHp !== 'number') continue;
+        if (this.hpOf(m) <= 0) await this.makeCtx(m.owner, null).destroy(m, { reason: 'stats' });
+      }
+    }
+  };
+
   Game.prototype.afterAction = async function () {
+    if (this.winner === null) await this.sweepDead();
     this.checkWin();
     if (this.winner === null) {
       this.updateForecastState(this.active);

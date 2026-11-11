@@ -102,6 +102,14 @@
   }
 
   // ---------- board ----------
+  // keyword badges on board cards (the small board cards hide the keyword chips; 守護 has its own frame colour)
+  function kwBadges(el, inst) {
+    const kws = inst.keywords || [];
+    const badges = (ui.KEYWORDS || []).filter(function (k) { return kws.indexOf(k.id) >= 0 && k.id !== 'guard'; });
+    if (kws.indexOf('ward') >= 0) el.classList.add('is-ward');
+    if (kws.indexOf('untouchable') >= 0) el.classList.add('is-untouchable');
+    if (badges.length) el.appendChild(h('span', { class: 'bt-kwb', 'aria-label': badges.map(function (k) { return k.name; }).join('・') }, badges.map(function (k) { return h('i', { class: 'kwb-' + k.id }, k.name); })));
+  }
   function monsterCard(game, inst, view, where) {
     const def = defOf(inst);
     const snapshot = Object.assign({}, inst, { atk: game.atkOf(inst), hp: game.hpOf(inst), maxHp: game.maxHpOf(inst) });
@@ -116,6 +124,7 @@
     if (canAct) el.classList.add('can-act');
     if (inst.attacksLeft <= 0 && game.active === inst.owner) el.classList.add('spent');
     if (def && def.keywords && def.keywords.indexOf('guard') >= 0) el.classList.add('is-guard');
+    kwBadges(el, inst);
     const ab = (view.abilities || []).find((a) => a.uid === inst.uid);
     if (ab && inst.owner === 0) {
       return h('span', { class: 'bt-slot has-ab' }, el,
@@ -140,6 +149,7 @@
         selected: list.some((x) => view.isSelected(x.uid)),
       });
       el.dataset.uids = list.map((x) => x.uid).join(',');
+      kwBadges(el, first);
       if (list.some((x) => view.isHighlighted(x.uid))) el.classList.add('hl');
       if (first.owner === 0 && game.active === 0 && list.some((x) => game.canAttackWith(0, x))) el.classList.add('can-act');
       row.appendChild(h('span', { class: 'bt-slot stack' }, el));

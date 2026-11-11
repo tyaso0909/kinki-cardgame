@@ -17,13 +17,15 @@
     maxBoard: 'max', drawPerTurn: 'last', phantomAtkBonus: 'sum', phantomHpBonus: 'sum',
     sealWildBonus: 'sum', damageTakenDelta: 'sum', maxManaGainDelta: 'sum', costDelta: 'sum',
     spellCostDelta: 'sum', chainAtTurnStart: 'sum', initialHandDelta: 'sum', reserveLasts: 'max',
-    extraCostAfterN: 'last', curseRedirectToMonsterUid: 'last', firstSpellStolenBy: 'last'
+    extraCostAfterN: 'last', curseRedirectToMonsterUid: 'last', firstSpellStolenBy: 'last',
+    handLimitDelta: 'sum', monsterAtkDelta: 'sum', atkPerHandCard: 'sum', curseShrink: 'sum'
   };
   const STATUS_DEFAULT = {
     spellMultiplier: 1, summonMultiplier: 1, allEffectsMultiplier: 1, chainMultiplier: 1, timedTickRate: 1,
     cardsPerTurnLimit: Infinity, sameNamePerTurnLimit: Infinity, maxBoard: Game.BOARD_CAP, drawPerTurn: 1,
     phantomAtkBonus: 0, phantomHpBonus: 0, sealWildBonus: 0, damageTakenDelta: 0, maxManaGainDelta: 0, costDelta: 0,
-    spellCostDelta: 0, chainAtTurnStart: 0, initialHandDelta: 0
+    spellCostDelta: 0, chainAtTurnStart: 0, initialHandDelta: 0,
+    handLimitDelta: 0, monsterAtkDelta: 0, atkPerHandCard: 0, curseShrink: 0
   };
 
   function combine(mode, a, b) {
@@ -319,20 +321,50 @@
     return out;
   };
 
+  // Stat changes that aren't buffs on the card itself (2026-11 additions):
+  //   def.effects.dynamicStats(game, inst) → {atk, hp}   (マナの巨人: X = max mana)
+  //   statuses monsterAtkDelta (重力の谷), atkPerHandCard (知識は力), curseShrink (呪詛の重み: -1/-1 per 5 curse)
+  Game.prototype.statAura = function (inst) {
+    let a = 0, h = 0;
+    const def = G.CardDB.tryGet(inst.defId);
+    if (def && def.effects && typeof def.effects.dynamicStats === 'function') {
+      const s = def.effects.dynamicStats(this, inst) || {};
+      a += s.atk || 0; h += s.hp || 0;
+    }
+    if ((inst.zone === 'board' || inst.zone === 'phantoms') && inst.owner !== undefined && this.players[inst.owner]) {
+      const o = inst.owner;
+      a += this.status(o, 'monsterAtkDelta') || 0;
+      const per = this.status(o, 'atkPerHandCard') || 0;
+      if (per) a += per * this.players[o].hand.length;
+      const shrink = this.status(o, 'curseShrink') || 0;
+      if (shrink) { const n = Math.floor((this.players[o].curse || 0) / 5) * shrink; a -= n; h -= n; }
+    }
+    return { atk: a, hp: h };
+  };
   Game.prototype.atkOf = function (inst) {
     let a = inst.atk;
     for (let i = 0; i < inst.buffs.length; i++) a += inst.buffs[i].atk || 0;
     if (inst.isPhantom) a += this.status(inst.owner, 'phantomAtkBonus') || 0;
+    a += this.statAura(inst).atk;
     return Math.max(0, a);
   };
   Game.prototype.maxHpOf = function (inst) {
     let h = inst.maxHp;
     for (let i = 0; i < inst.buffs.length; i++) h += inst.buffs[i].hp || 0;
     if (inst.isPhantom) h += this.status(inst.owner, 'phantomHpBonus') || 0;
+    h += this.statAura(inst).hp;
     return h;
   };
   Game.prototype.hpOf = function (inst) { return this.maxHpOf(inst) - inst.damage; };
   Game.prototype.hasKeyword = function (inst, kw) { return inst.keywords.indexOf(kw) >= 0; };
+  // 連撃 (double): 2 attacks per turn
+  Game.prototype.attacksPerTurn = function (inst) { return inst.keywords.indexOf('double') >= 0 ? 2 : 1; };
+  // 加護 (ward): can't be chosen by the opponent's effects. `actorIdx` = whose effect is choosing.
+  Game.prototype.isWardedFrom = function (inst, actorIdx) {
+    return !!(inst && inst.keywords && inst.owner !== undefined && actorIdx !== undefined && actorIdx !== null &&
+      inst.owner !== actorIdx && inst.keywords.indexOf('ward') >= 0 &&
+      (inst.zone === 'board' || inst.zone === 'phantoms'));
+  };
 
   Game.prototype.monstersOf = function (who) {
     const p = this.player(who);
@@ -351,7 +383,8 @@
 
   Game.prototype.attackTargetsFor = function (pIdx) {
     const opp = this.players[1 - pIdx];
-    const monsters = this.monstersOf(opp.idx);
+    // 不可侵 (untouchable): can't be attacked at all (and so never counts as a guard)
+    const monsters = this.monstersOf(opp.idx).filter(function (m) { return m.keywords.indexOf('untouchable') < 0; });
     const guards = monsters.filter(function (m) { return m.keywords.indexOf('guard') >= 0; });
     if (guards.length) return guards.map(function (m) { return m.uid; });
     return monsters.map(function (m) { return m.uid; }).concat(['face']);
@@ -435,7 +468,7 @@
   // ---- hand limit -------------------------------------------------------------
   Game.prototype.enforceHandLimit = async function (pIdx) {
     const p = this.player(pIdx);
-    const limit = this.status(pIdx, 'handLimit') || Game.HAND_LIMIT;
+    const limit = (this.status(pIdx, 'handLimit') || Game.HAND_LIMIT) + (this.status(pIdx, 'handLimitDelta') || 0);
     if (p.hand.length <= limit) return;
     const ctx = this.makeCtx(pIdx, null);
     const keep = await ctx.pick({ kind: 'handCard', side: 'ally', count: limit, prompt: '手札に残すカードを' + limit + '枚選ぶ' });

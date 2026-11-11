@@ -228,7 +228,7 @@ js/engine/play.js      playCard / cast / replay / attack / abilities / reserves 
 js/engine/turn.js      start/main/end, extra turns, timed tick, hazard & forecast state
 js/engine/loop.js      loop detector + runLoop
 js/engine/game.js      G.Engine facade (createGame, deserialize)
-js/data/cards_accel.js … cards_cycle.js, cards_copy.js, cards_chain.js, cards_time.js, cards_doom.js, cards_generic.js, cards_boss.js
+js/data/cards_accel.js … cards_cycle.js, cards_copy.js, cards_chain.js, cards_time.js, cards_doom.js, cards_generic.js, cards_boss.js, cards_ext.js (2026-11 additions)
 js/data/relics.js      44 relics (+ boss/elite relics)
 js/data/enemies.js     15 normal, 6 elite, 5 bosses (decks, hazard, style, field, relics, flavor)
 js/data/events.js      16 run events

@@ -574,3 +574,9 @@ html[data-theme="light"] .rar-taboo .card-name { color: #5a2aa8; }
   .card-detail { grid-template-columns: auto 1fr; align-items: start; text-align: left; justify-items: stretch; }
   .card-detail .card { grid-row: span 3; }
 }
+
+/* ---------- keyword glossary in the card detail (2026-11: 加護・不可侵・連撃・貫通) ---------- */
+.card-detail .detail-kwrules { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 2px 0 0; width: 100%; font-size: var(--fs-s); line-height: 1.6; }
+.card-detail .detail-kwrules dt { font-family: var(--font-title); font-weight: 700; color: var(--lc, var(--generic)); white-space: nowrap; }
+html:not([data-theme="light"]) .card-detail .detail-kwrules dt { color: color-mix(in srgb, var(--lc, var(--generic)) 60%, white 40%); }
+.card-detail .detail-kwrules dd { margin: 0; color: var(--ink-dim); }

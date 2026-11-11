@@ -87,7 +87,8 @@
     if (!isExtra) { this.loop.detected = null; this.loop.lastExtraTurn = null; }
     this.resetTurnCounters(p);
     // monsters refresh
-    this.monstersOf(pIdx).forEach(function (m) { m.attacksLeft = 1; m.exhausted = false; m.flags.attackedTwice = false; });
+    const self = this;
+    this.monstersOf(pIdx).forEach(function (m) { m.attacksLeft = self.attacksPerTurn(m); m.exhausted = false; m.flags.attackedTwice = false; });
     this.addLog('――― ターン' + this.turn + '：' + p.name + (isExtra ? '（追加ターン）' : '') + ' ―――');
     this.emit('turnStart', { who: pIdx, turn: this.turn, extra: !!isExtra, streak: this.streak });
     const ctx = this.makeCtx(pIdx, null);
@@ -129,6 +130,7 @@
     this.pushTurnSnapshot();
     await this.trigger('onTurnStart', { who: pIdx, extra: !!isExtra, streak: this.streak });
     if (isExtra) await this.trigger('onExtraTurnStart', { who: pIdx, streak: this.streak });
+    await this.sweepDead();
     this.checkWin();
     void opp;
   };
@@ -170,6 +172,7 @@
     // reserves targeting this player expire; statuses bound to this turn expire
     await this.expireReserves(pIdx);
     this.expireStatuses(pIdx);
+    await this.sweepDead(); // e.g. an until-end-of-turn HP buff ran out on a damaged monster
     // enemy forecast handled by AI; just recompute hazard state here
     this.updateForecastState(pIdx);
     if (this.turnLimit && this.turn >= this.turnLimit && this.winner === null) this.setWinner(null, 'turnLimit');

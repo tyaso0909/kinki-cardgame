@@ -81,3 +81,9 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Swipes follow the finger, then glide with the release speed and settle with a card edge at the left (`G.ui.battleDrag.glideTo / pageHand / snapPos`). CSS scroll-snap is off (it fought the manual scrolling). The hand can be swiped at any time, also on the enemy's turn. Mouse wheel over the hand scrolls it sideways (PC).
 - `.bt-handnav` (same grid area as the hand): ‹ › page buttons + edge fades when more cards are off-screen that way, and a bar with 「手札 N枚」 and a thumb showing the visible part.
 - Tapping a hand card shows `.bt-peek`: the card at large size (full text) above the hand / my strip, with the reason when it can't be played. The prompt bar keeps the buttons; tapping the preview closes it. It is removed by `clearMode()` (drags, target modes, etc.).
+
+## 2026-11 additions: keywords, 45 cards, stat auras (cards_ext.js)
+- Keywords (ids → JP): `ward` 加護 (opponent effects can't choose it: `Game.isWardedFrom(inst, actorIdx)` filters `ctx.candidatesFor` and play-time targets; global "all" effects still apply), `untouchable` 不可侵 (left out of `attackTargetsFor`, never a guard), `double` 連撃 (`Game.attacksPerTurn(inst)` = 2, used at summon and turn start), `pierce` 貫通 (attack that destroys a monster sends `atk − hpBefore` to its owner). UI: `G.ui.KEYWORDS` (chips + card-detail glossary), board badges `.bt-kwb`.
+- New statuses (sum): `handLimitDelta`, `monsterAtkDelta`, `atkPerHandCard`, `curseShrink` (side 'enemy': −1/−1 per 5 curse). `def.effects.dynamicStats(game, inst)` adds to atk/hp (マナの巨人; `def.xStats` makes cards show X/X off the board). All folded in by `Game.statAura`.
+- `Game.sweepDead()` destroys monsters at HP ≤ 0 after every action, at turn end (buff expiry) and after turn-start triggers.
+- Max mana has no cap (by design).

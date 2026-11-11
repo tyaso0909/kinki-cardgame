@@ -87,11 +87,20 @@
   }
 
   // ---------- keywords ----------
+  // Monster keywords: name + one-line rule (shown as chips and explained in the card detail).
+  const KEYWORDS = [
+    { id: 'rush', name: '速攻', rule: '出したターンから攻撃できる' },
+    { id: 'guard', name: '守護', rule: '相手は、守護を持つモンスターから先に攻撃しなければならない' },
+    { id: 'ward', name: '加護', rule: '相手のカードの効果の対象にならない（「すべて」に効く効果は受ける）' },
+    { id: 'untouchable', name: '不可侵', rule: '攻撃されない' },
+    { id: 'double', name: '連撃', rule: '1ターンに2回攻撃できる' },
+    { id: 'pierce', name: '貫通', rule: 'モンスターを攻撃して倒したとき、余ったダメージを相手のライフに与える' },
+  ];
+  ui.KEYWORDS = KEYWORDS;
   function keywordChips(def, inst) {
     const chips = [];
     const kws = (inst && inst.keywords) || def.keywords || [];
-    if (kws.includes('rush')) chips.push(['速攻', '']);
-    if (kws.includes('guard')) chips.push(['守護', '']);
+    KEYWORDS.forEach(function (k) { if (kws.includes(k.id)) chips.push([k.name, 'kw-' + k.id]); });
     if (def.reserve) chips.push(['予約', 'kw-reserve']);
     if (def.reprise != null && def.reprise !== false) chips.push(['再演' + def.reprise, '']);
     if (def.timed != null && def.timed !== false) chips.push(['時限' + def.timed, '']);
@@ -233,7 +242,8 @@
     const kwCount = kws.childElementCount;
     // Flavor only when there is room: large view always, medium when rules text is short.
     const tlen = (def.text || '').length;
-    const showFlavor = !!def.flavor && size !== 's' && tlen <= (def.type === 'monster' ? 14 : 26);
+    // (a monster with keyword chips has no room left above its stats — flavor would sit on top of 攻/体)
+    const showFlavor = !!def.flavor && size !== 's' && tlen <= (def.type === 'monster' ? 14 : 26) && !(def.type === 'monster' && kwCount > 0);
     const txt = h('div', { class: 'card-text' + shrinkClass(def.text, size, def, kwCount > 0, showFlavor) }, textNodes(def.text || ''));
     const flavor = showFlavor ? h('div', { class: 'card-flavor' }, def.flavor) : null;
 
@@ -252,8 +262,10 @@
 
     // monster stats
     if (def.type === 'monster') {
-      const atk = inst && inst.atk != null ? inst.atk : def.atk;
-      const hp = inst && inst.hp != null ? inst.hp : def.hp;
+      // X/X monsters (マナの巨人) read "X" until they are on the board (the battle passes real atk/hp then)
+      const xOut = def.xStats && !(inst && (inst.zone === 'board' || inst.zone === 'phantoms'));
+      const atk = xOut ? 'X' : inst && inst.atk != null ? inst.atk : def.atk;
+      const hp = xOut ? 'X' : inst && inst.hp != null ? inst.hp : def.hp;
       const hurt = inst && inst.maxHp != null && hp < inst.maxHp;
       const atkEl = h('div', { class: 'card-atk', 'data-label': '攻', title: '攻撃力' }, h('span', null, atk === undefined ? '?' : String(atk)));
       const hpEl = h('div', { class: 'card-hp' + (hurt ? ' hurt' : ''), 'data-label': '体', title: '体力' }, h('span', null, hp === undefined ? '?' : String(hp)));
@@ -281,13 +293,16 @@
       def.role ? h('dt', null, '役割') : null, def.role ? h('dd', null, ROLE[def.role] || def.role) : null,
       h('dt', null, 'コスト'), h('dd', { class: 't-num' }, def.cost === 'X' ? 'X' : String(def.cost == null ? 0 : def.cost)),
       def.type === 'monster' ? h('dt', null, '攻撃／体力') : null,
-      def.type === 'monster' ? h('dd', { class: 't-num' }, String(def.atk) + ' / ' + String(def.hp)) : null,
+      def.type === 'monster' ? h('dd', { class: 't-num' }, def.xStats ? 'X / X' : String(def.atk) + ' / ' + String(def.hp)) : null,
     );
     const kwChips = keywordChips(def, isInst(x) ? x : null);
+    const kwList = ((isInst(x) && x.keywords) || def.keywords || []);
+    const glossary = KEYWORDS.filter(function (k) { return kwList.includes(k.id); });
     const body = h('div', { class: 'card-detail lin-' + lineage },
       renderCard(def, { size: 'l' }),
       facts,
       h('div', { class: 'detail-text' }, kwChips.length ? h('div', { class: 'card-kws', style: { margin: '0 0 8px', fontSize: '16px' } }, kwChips) : null, textNodes(def.text || '（効果なし）')),
+      glossary.length ? h('dl', { class: 'detail-kwrules' }, glossary.map(function (k) { return [h('dt', null, k.name), h('dd', null, k.rule)]; })) : null,
       def.flavor ? h('div', { class: 'detail-flavor' }, def.flavor) : null,
     );
     return ui.modal({ title: def.name, body, wide: true, buttons: [{ label: '閉じる', value: true }] });

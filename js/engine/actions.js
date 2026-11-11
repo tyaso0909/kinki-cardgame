@@ -318,7 +318,7 @@
     if (inst.zone !== 'limbo') g.removeFromZone(inst);
     inst.owner = p.idx;
     inst.summonedTurn = g.turn;
-    inst.attacksLeft = 1;
+    inst.attacksLeft = g.attacksPerTurn(inst);
     inst.exhausted = false;
     if (opts.resetDamage !== false) inst.damage = 0;
     if (typeof def.atk === 'number' && opts.keepStats !== true) { inst.atk = def.atk; inst.hp = def.hp; inst.maxHp = def.hp; }
@@ -837,6 +837,8 @@
         default: throw new Error('unknown pick kind ' + spec.kind);
       }
     });
+    // 加護: monsters that can't be chosen by this (the opponent's) effect
+    list = list.filter(function (c) { return !g.isWardedFrom(c, meIdx); });
     if (spec.filter) list = list.filter(function (c) { return spec.filter(self, c); });
     return list;
   };
