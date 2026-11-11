@@ -140,7 +140,7 @@
     ok(!g.hasKeyword(hatch, 'double'), 'expired');
   });
 
-  test('時間: 眠る時竜 (+2/+2 each turn) / 竜の刻 (free dragon) / 永劫の時竜 (extra turn, a dragon costs 0)', async function () {
+  test('時間: 眠る時竜 (+2/+2 each turn) / 竜の刻 (free dragon) / 千年の時竜 (extra turn, a dragon costs 0)', async function () {
     const g = await T.sandbox({ p0: { hand: ['time_33', 'time_34', 'accel_24', 'accel_39'], board: ['time_32'], mana: 30, deck: filler(8) }, p1: { deck: filler(8) } });
     const sleeper = mon(g, 0, 'time_32');
     const a0 = g.atkOf(sleeper);

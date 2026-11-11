@@ -145,7 +145,7 @@
         const c = await pickHandDragon(ctx, 'コストを払わずに出す竜を選ぶ', function (x) { return defOf(x).type === 'monster' && !defOf(x).uncastable; });
         if (c) await ctx.summon(c, ctx.me);
       } } },
-    { id: 'time_34', name: '永劫の時竜', type: 'monster', lineage: 'time', role: 'engine', rarity: 'legend',
+    { id: 'time_34', name: '千年の時竜', type: 'monster', lineage: 'time', role: 'engine', rarity: 'legend',
       cost: 10, atk: 10, hp: 10, tags: ['dragon'],
       text: '10/10。召喚時、追加ターンを得る。自分の追加ターン開始時、手札の竜1枚のコストを0にする',
       effects: {
