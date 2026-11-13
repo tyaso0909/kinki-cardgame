@@ -49,7 +49,7 @@
     'js/data/cards_basic.js', 'js/data/cards_accel.js', 'js/data/cards_cycle.js', 'js/data/cards_copy.js', 'js/data/cards_chain.js',
     'js/data/cards_time.js', 'js/data/cards_doom.js', 'js/data/cards_generic.js', 'js/data/cards_boss.js', 'js/data/cards_ext.js', 'js/data/cards_dragon.js',
     'js/data/relics.js', 'js/data/_index.js', 'js/data/enemies.js', 'js/data/events.js', 'js/data/texts.js',
-    'js/ai/chooser.js', 'js/ai/combos.js', 'js/ai/ai.js',
+    'js/ai/chooser.js', 'js/ai/combos.js', 'js/ai/ai.js', 'js/ai/wish.js',
     'js/run/packs.js', 'js/run/map.js', 'js/run/shop.js', 'js/run/run.js', 'js/run/rewards.js',
     'js/meta/save.js', 'js/meta/codex.js', 'js/meta/achievements.js', 'js/meta/depth.js', 'js/meta/festival.js', 'js/meta/records.js', 'js/meta/meta.js'
   ];

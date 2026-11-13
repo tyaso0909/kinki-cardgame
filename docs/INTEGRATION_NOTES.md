@@ -103,3 +103,8 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - Enemies never use 禁忌 (taboo/uncastable) cards nor 不可侵の巨神・終末の獣・縮小の呪文・巨人化の秘薬・竜狩りの大弩・重力の谷 (tests/enemy_dragon.test.js).
 - 2026-11: the run's first pack choice never offers 妨害パック (`G.Packs.offer` option `exclude`); it can appear from the 2nd pick on.
 - 2026-11: 火種の子竜 gains +X/+X where X = its own cost (printed 0 + costMod), via dynamicStats; the battle hand shows real stats for dynamicStats monsters.
+
+## 願いの魔神 (2026-11)
+- gen_46 願いの魔神: generic legend monster, 3 mana 1/1. On summon it offers 3 cards (from different categories) and adds the picked one to hand as 朧. Inspired by Hearthstone's Zephrys the Great, without the no-duplicates condition.
+- Logic in `js/ai/wish.js` (`G.Wish.offers(game, pIdx)`, `G.Wish.POOLS`). Categories: リーサル / 単体除去 / 一掃 / 回復 / 守り / 手札補充, each with a hand-picked pool. Every candidate is tried on a private clone with the AI simulator (`AI.simulate`, now exported) using AI choosers on both sides (the real players' choosers must never be called); リーサル only when the card plus face attacks actually wins this turn; 守り reads the opponent's threats (keys, timed cards, loops, extra turns, chain, crests, board damage). Clones made by `AI.simulate` and the wish carry `_sim = true`, where the wish takes a cheap fixed answer (no nested searches).
+- UI: `ctx.choose` options that carry `card` render as cards with a category caption (`.bt-pickcap`).

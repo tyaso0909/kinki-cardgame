@@ -430,7 +430,8 @@
             else if (count === 1) { picked.length = 0; picked.push(c); }
             render(); updateBtn();
           } });
-          grid.appendChild(card);
+          if (c.caption) grid.appendChild(h('div', { class: 'bt-pickcap' }, h('span', { class: 'bt-pickcap-lbl' }, c.caption), card));
+          else grid.appendChild(card);
         });
       }
       function updateBtn() {
@@ -938,6 +939,13 @@
     if (!S) return G.Engine.defaultChooser(spec, cands, game);
     await drain();
     refresh();
+    if (spec.kind === 'option' && cands.length && cands.every((o) => o.card)) {
+      // options that are cards (願いの魔神): pick from the rendered cards, with each option's caption
+      const picked = await pickFromList(spec, cands.map((o) => o.card), { cancelable: false });
+      const c = picked && picked[0];
+      const hit = c ? cands.find((o) => o.card === c) : null;
+      return hit ? hit.id : cands[0].id;
+    }
     if (spec.kind === 'option') {
       const v = await ui.modal({ title: spec.prompt || '選ぶ', dismissable: false, body: null, buttons: cands.map((o, i) => ({ label: o.label || o.id, value: o.id, primary: i === 0 })) });
       return v == null ? cands[0].id : v;

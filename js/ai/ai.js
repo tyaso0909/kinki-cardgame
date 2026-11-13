@@ -339,6 +339,7 @@
   // Simulate one candidate on a clone. Returns {score, decisive, bad}.
   async function simulate(game, pIdx, cand, style) {
     const g2 = game.clone();
+    g2._sim = true; // effects that search themselves (願いの魔神) take a cheap path inside simulations
     const chooser = AI.makeChooser(style);
     g2.players[pIdx].chooser = chooser;
     g2.players[1 - pIdx].chooser = AI.makeChooser('disrupt');
@@ -371,6 +372,7 @@
     }
     return { score: score, decisive: decisive, bad: g2.winner === 1 - pIdx, winner: g2.winner, dmg: dmg };
   }
+  AI.simulate = simulate;
   function isFinisherCard(game, pIdx, defId) {
     const def = G.CardDB.get(defId);
     return def.role === 'finisher' || def.tags.indexOf('finisher') >= 0 || (G.Combos && G.Combos.isFinisherFor(game, pIdx, defId));

@@ -350,6 +350,22 @@
     { id: 'gen_43', name: '小鬼の爆弾魔', type: 'monster', lineage: 'generic', role: 'disrupt', rarity: 'rare',
       cost: 2, atk: 2, hp: 1, keywords: ['charge'], tags: ['disrupt'],
       text: '2/1。突進。破壊時、相手と相手のモンスターすべてに2ダメージを与える',
-      effects: { onDeath: Fx.dmgOppAndBoard(2) } }
+      effects: { onDeath: Fx.dmgOppAndBoard(2) } },
+    // 願いの魔神 (2026-11): the wish logic lives in js/ai/wish.js (it reuses the AI's battle simulator).
+    { id: 'gen_46', name: '願いの魔神', type: 'monster', lineage: 'generic', role: 'engine', rarity: 'legend',
+      cost: 3, atk: 1, hp: 1, keywords: [], tags: [],
+      text: '1/1。召喚時、今の状況に合ったカード3枚（リーサル・単体除去・一掃・回復・守り・手札補充から）を見て、1枚を朧として手札に加える',
+      flavor: '望みを言え。ただし、望んだものが手に入るとは限らぬ。',
+      effects: { onSummon: async function (ctx) {
+        const offers = G.Wish ? await G.Wish.offers(ctx.game, ctx.me.idx) : [];
+        if (!offers.length) { ctx.log('願いは届かなかった'); return; }
+        const options = offers.map(function (o) {
+          const card = ctx.game.createCardInst(o.defId, ctx.me.idx, {});
+          card.oboro = true; card.caption = o.catName;
+          return { id: o.defId, label: '【' + o.catName + '】' + DB.get(o.defId).name, card: card, caption: o.catName };
+        });
+        const id = await ctx.choose(options, { prompt: '願いの魔神：願いを1つ選ぶ', cards: true });
+        await ctx.createOboro(id || options[0].id, ctx.me, 'hand');
+      } } }
   ]);
 })(globalThis.G = globalThis.G || {});
