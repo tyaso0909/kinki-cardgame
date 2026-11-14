@@ -370,7 +370,7 @@
     // 回復カード (2026-11)
     { id: 'gen_47', name: '血吸いの騎士', type: 'monster', lineage: 'generic', role: 'engine', rarity: 'rare',
       cost: 3, atk: 3, hp: 3, keywords: ['lifesteal'], tags: [],
-      text: '3/3。吸命（このモンスターがダメージを与えると、同じだけ自分のライフが回復する）',
+      text: '3/3。吸命',
       flavor: '傷口から吸った命は、主のもとへ還る。',
       effects: {} },
     { id: 'gen_48', name: '再生の秘術', type: 'spell', lineage: 'generic', role: 'engine', rarity: 'rare',
