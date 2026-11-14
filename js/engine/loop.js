@@ -11,6 +11,10 @@
   // sequences between the repeats are identical, a loop is detected.
   // Extra-turn loops: two consecutive extra turns by the same player with
   // identical action sequences are detected at turn end.
+  // Draw loops (2026-11): a cycle that draws every pass (終わりなき頁＋火種, 永劫の書＋火種 …) never
+  // returns to the same hand/deck, so it is also checked with a relaxed hash that ignores the looping
+  // player's hand contents and deck size. Such a loop is bounded by the deck: runLoop stops before a
+  // pass would draw from an empty deck.
   // ---------------------------------------------------------------
   const Game = G.Engine.Game;
   const util = G.util;
@@ -22,15 +26,17 @@
     return ids;
   }
 
-  Game.prototype.stateHash = function () {
+  // relaxed: ignore the active player's hand contents and deck size (draw loops)
+  Game.prototype.stateHash = function (relaxed) {
     const parts = [];
     for (let i = 0; i < 2; i++) {
       const p = this.players[i];
-      parts.push(zoneIds(p.hand).sort().join(','));
+      const loose = relaxed && i === this.active;
+      parts.push(loose ? '*' : zoneIds(p.hand).sort().join(','));
       parts.push(zoneIds(p.board).join(','));
       parts.push(p.phantoms.length);
       parts.push(zoneIds(p.crests).sort().join(','));
-      parts.push(p.grave.length, p.deck.length, p.exile.length);
+      parts.push(p.grave.length, loose ? '*' : p.deck.length, p.exile.length);
       parts.push(p.timed.map(function (c) { return c.defId + ':' + c.timedCount; }).join(','));
       parts.push(p.seals.length, p.vault.length, p.reserves.length);
       parts.push(p.board.map(function (c) { return c.damage + '/' + c.attacksLeft; }).join(','));
@@ -71,17 +77,25 @@
   Game.prototype.loopAfterAction = function () {
     if (this.loop.running) return;
     const hash = this.stateHash();
+    const rhash = this.stateHash(true);
     const action = util.last(this.turnActions) || null;
     const hist = this.loop.history;
-    hist.push({ hash: hash, action: action });
+    hist.push({ hash: hash, rhash: rhash, action: action });
     if (hist.length > 400) hist.splice(0, hist.length - 400);
-    const idx = [];
-    for (let i = hist.length - 1; i >= 0 && idx.length < 3; i--) if (hist[i].hash === hash) idx.unshift(i);
-    if (idx.length < 3) return;
-    const c1 = hist.slice(idx[0] + 1, idx[1] + 1).map(function (h) { return h.action; });
-    const c2 = hist.slice(idx[1] + 1, idx[2] + 1).map(function (h) { return h.action; });
-    if (!sameSequence(c1, c2)) return;
-    this.setLoopDetected({ kind: 'action', who: this.active, cycle: util.deepClone(c2), hash: hash });
+    const self = this;
+    function cycleFor(key, value) {
+      const idx = [];
+      for (let i = hist.length - 1; i >= 0 && idx.length < 3; i--) if (hist[i][key] === value) idx.unshift(i);
+      if (idx.length < 3) return null;
+      const c1 = hist.slice(idx[0] + 1, idx[1] + 1).map(function (h) { return h.action; });
+      const c2 = hist.slice(idx[1] + 1, idx[2] + 1).map(function (h) { return h.action; });
+      return sameSequence(c1, c2) ? c2 : null;
+    }
+    const strict = cycleFor('hash', hash);
+    if (strict) { this.setLoopDetected({ kind: 'action', who: this.active, cycle: util.deepClone(strict), hash: hash }); return; }
+    // the same actions keep repeating while only the hand and the deck change: a draw loop
+    const loose = cycleFor('rhash', rhash);
+    if (loose) self.setLoopDetected({ kind: 'action', who: this.active, cycle: util.deepClone(loose), hash: rhash, relaxed: true });
   };
 
   // Called from endTurn when the same player continues (extra turn).
@@ -106,11 +120,11 @@
   }
 
   Game.prototype.setLoopDetected = function (det) {
-    const already = this.loop.detected && this.loop.detected.kind === det.kind && sameLoop(this.loop.detected.cycle, det.cycle);
+    const already = this.loop.detected && this.loop.detected.kind === det.kind && !!this.loop.detected.relaxed === !!det.relaxed && sameLoop(this.loop.detected.cycle, det.cycle);
     this.loop.detected = det;
     if (!already) {
       this.addLog('ループを検出：' + det.cycle.length + '手の繰り返し');
-      this.emit('loopDetected', { who: det.who, kind: det.kind, cycle: det.cycle, length: det.cycle.length });
+      this.emit('loopDetected', { who: det.who, kind: det.kind, cycle: det.cycle, length: det.cycle.length, relaxed: !!det.relaxed });
     }
   };
 
@@ -186,7 +200,7 @@
   // Stops early when an action becomes illegal, the state stops cycling, 零の聖域 voids it, or the game ends.
   Game.prototype.runLoop = async function (pIdx, times, opts) {
     opts = opts || {};
-    const det = opts.cycle ? { kind: opts.kind || 'action', who: pIdx, cycle: opts.cycle } : this.loop.detected;
+    const det = opts.cycle ? { kind: opts.kind || 'action', who: pIdx, cycle: opts.cycle, relaxed: !!opts.relaxed } : this.loop.detected;
     if (!det) return { ok: false, reason: 'noLoop', iterations: 0 };
     if (det.who !== pIdx || this.active !== pIdx) return { ok: false, reason: 'notYourLoop', iterations: 0 };
     const inf = times === 'inf' || times === Infinity;
@@ -196,15 +210,24 @@
     this.addLog('ループ実行 ×' + (inf ? '∞' : max));
     this.emit('loopRun', { who: pIdx, times: inf ? 'inf' : max, length: cycle.length });
     let iterations = 0, reason = 'done';
+    const relaxed = !!det.relaxed;
+    let drawPerPass = 0;
     try {
       while (iterations < max && this.winner === null) {
+        // a draw loop stops before a pass would draw from an empty deck (that would lose the game)
+        if (relaxed && iterations >= 1 && drawPerPass > 0 && this.players[pIdx].deck.length < drawPerPass) {
+          this.addLog('山札が尽きる前にループを止めた');
+          reason = 'deck';
+          break;
+        }
+        const deckBefore = this.players[pIdx].deck.length;
         if (iterations >= 1 && this.status(pIdx, 'loopSecondIterationVoid')) {
           this.addLog('零の聖域：ループの2周目以降は無効');
           this.emit('loopVoid', { who: pIdx });
           reason = 'void';
           break;
         }
-        const before = det.kind === 'action' ? this.stateHash() : null;
+        const before = det.kind === 'action' ? this.stateHash(relaxed) : null;
         let broke = false;
         for (let a = 0; a < cycle.length; a++) {
           const fn = this.resolveActionDesc(pIdx, cycle[a]);
@@ -221,7 +244,8 @@
         this.emit('loopIteration', { who: pIdx, iteration: iterations });
         await this.trigger('onLoopIteration', { who: pIdx, iteration: iterations });
         if (this.winner !== null) { reason = 'win'; break; }
-        if (det.kind === 'action' && this.stateHash() !== before) { reason = 'diverged'; break; }
+        if (relaxed && iterations === 1) drawPerPass = Math.max(0, deckBefore - this.players[pIdx].deck.length);
+        if (det.kind === 'action' && this.stateHash(relaxed) !== before) { reason = 'diverged'; break; }
       }
       if (inf && iterations >= OVERFLOW && this.winner === null) {
         reason = 'overflow';

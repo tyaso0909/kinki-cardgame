@@ -112,3 +112,7 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 ## 回復カード: 吸命 / 血吸いの騎士 / 再生の秘術 (2026-11)
 - New keyword `lifesteal` (吸命): in `P.damage`, damage whose `source` is a card with that keyword heals the source's owner by the amount dealt (overkill included, capped at max life). Covers attacks, counter-damage, 貫通 and the monster's own effect damage. Listed in `ui.KEYWORDS`; board badge `.kwb-lifesteal`.
 - gen_47 血吸いの騎士 (generic rare, 3 mana 3/3, 吸命). gen_48 再生の秘術 (generic rare spell, 3 mana: heal floor(lost life / 2)); added to the 願いの魔神 回復 pool.
+
+## Draw loops (2026-11)
+- `stateHash(relaxed)`: with `relaxed`, the active player's hand contents and deck size are ignored. `loopAfterAction` checks the strict hash first, then the relaxed one; a match on the relaxed hash with identical action cycles is a draw loop (`loop.detected.relaxed = true`), e.g. 終わりなき頁＋火種 or 永劫の書＋火種. Playing several copies from hand is still not a loop (the grave grows).
+- `runLoop` on a relaxed loop measures the cards drawn per pass and stops (reason `deck`) before a pass would draw from an empty deck. The UI offer says 「同じ手順が繰り返されている」 and the end banner 「山札が尽きる前に止めた」.

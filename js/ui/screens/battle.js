@@ -841,7 +841,7 @@
         break;
       case 'loopEnd':
         A.unsticky('loop'); refresh();
-        if (p.reason !== 'overflow') await A.banner({ eyebrow: 'ループ終了', title: p.iterations + ' 周', sub: { done: '指定回数を回した', win: '決着', illegal: '手が続かなくなった', diverged: '盤面が変わった', void: '零の聖域に無効化された' }[p.reason] || '', kind: 'loop', ms: 1100 });
+        if (p.reason !== 'overflow') await A.banner({ eyebrow: 'ループ終了', title: p.iterations + ' 周', sub: { done: '指定回数を回した', win: '決着', illegal: '手が続かなくなった', diverged: '盤面が変わった', void: '零の聖域に無効化された', deck: '山札が尽きる前に止めた' }[p.reason] || '', kind: 'loop', ms: 1100 });
         break;
       case 'loopVoid':
         await A.banner({ title: '零の聖域', sub: 'ループの2周目以降は無効', kind: 'time', ms: 1000 }); break;
@@ -894,7 +894,8 @@
     S.loopOffering = true;
     const A = S.anim;
     const choice = await A.banner({
-      eyebrow: 'ループ検出', title: '同じ盤面が繰り返されている', sub: (det.length || (det.cycle && det.cycle.length) || '?') + '手の繰り返し。まとめて回せる',
+      eyebrow: 'ループ検出', title: det.relaxed ? '同じ手順が繰り返されている' : '同じ盤面が繰り返されている',
+      sub: (det.length || (det.cycle && det.cycle.length) || '?') + '手の繰り返し。まとめて回せる' + (det.relaxed ? '（カードを引くので、山札が尽きる手前で止まる）' : ''),
       kind: 'loop', buttons: [
         { label: '×10', value: 10 }, { label: '×100', value: 100 }, { label: '∞', value: 'inf', primary: true }, { label: '自分で回す', value: null, ghost: true },
       ],
