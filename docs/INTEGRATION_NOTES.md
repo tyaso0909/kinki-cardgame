@@ -108,3 +108,7 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - gen_46 願いの魔神: generic legend monster, 3 mana 1/1. On summon it offers 3 cards (from different categories) and adds the picked one to hand as 朧. Inspired by Hearthstone's Zephrys the Great, without the no-duplicates condition.
 - Logic in `js/ai/wish.js` (`G.Wish.offers(game, pIdx)`, `G.Wish.POOLS`). Categories: リーサル / 単体除去 / 一掃 / 回復 / 守り / 手札補充, each with a hand-picked pool. Every candidate is tried on a private clone with the AI simulator (`AI.simulate`, now exported) using AI choosers on both sides (the real players' choosers must never be called); リーサル only when the card plus face attacks actually wins this turn; 守り reads the opponent's threats (keys, timed cards, loops, extra turns, chain, crests, board damage). Clones made by `AI.simulate` and the wish carry `_sim = true`, where the wish takes a cheap fixed answer (no nested searches).
 - UI: `ctx.choose` options that carry `card` render as cards with a category caption (`.bt-pickcap`).
+
+## 回復カード: 吸命 / 血吸いの騎士 / 再生の秘術 (2026-11)
+- New keyword `lifesteal` (吸命): in `P.damage`, damage whose `source` is a card with that keyword heals the source's owner by the amount dealt (overkill included, capped at max life). Covers attacks, counter-damage, 貫通 and the monster's own effect damage. Listed in `ui.KEYWORDS`; board badge `.kwb-lifesteal`.
+- gen_47 血吸いの騎士 (generic rare, 3 mana 3/3, 吸命). gen_48 再生の秘術 (generic rare spell, 3 mana: heal floor(lost life / 2)); added to the 願いの魔神 回復 pool.

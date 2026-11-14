@@ -8,7 +8,7 @@
   test('G.Data.idByName / cardsByLineage / poolForPacks / tabooCards / relicsBy', function () {
     eq(G.Data.idByName('零の聖域'), 'gen_28'); eq(G.Data.idByName('鏡像の写し'), 'boss5_01'); eq(G.Data.idByName('存在しないカード'), null);
     eq(G.Data.defByName('最後の一周').id, 'boss1_02');
-    eq(G.Data.cardsByLineage('generic').filter(function (d) { return d.id.indexOf('gen_') === 0; }).length, 46, '30 original + 16 added in 2026-11');
+    eq(G.Data.cardsByLineage('generic').filter(function (d) { return d.id.indexOf('gen_') === 0; }).length, 48, '30 original + 18 added in 2026-11');
     eq(G.Data.cardsByLineage('accel').filter(function (d) { return d.rarity === 'boss'; }).length, 0, 'boss-rarity cards excluded by default');
     ok(G.Data.cardsByLineage('accel', { includeBoss: true }).some(function (d) { return d.id === 'boss1_01'; }));
     const pool = G.Data.poolForPacks();

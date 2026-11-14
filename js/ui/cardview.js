@@ -97,6 +97,7 @@
     { id: 'double', name: '連撃', rule: '1ターンに2回攻撃できる' },
     { id: 'pierce', name: '貫通', rule: 'モンスターを攻撃して倒したとき、余ったダメージを相手のライフに与える' },
     { id: 'charge', name: '突進', rule: '出したターンでも、モンスターにだけ攻撃できる（相手のライフは狙えない）' },
+    { id: 'lifesteal', name: '吸命', rule: 'このモンスターがダメージを与えると、同じだけ自分のライフが回復する' },
   ];
   // Terms explained in the card detail when the rules text uses them (or the card itself is one).
   const TERMS = [

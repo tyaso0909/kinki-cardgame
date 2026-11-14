@@ -366,6 +366,21 @@
         });
         const id = await ctx.choose(options, { prompt: '願いの魔神：願いを1つ選ぶ', cards: true });
         await ctx.createOboro(id || options[0].id, ctx.me, 'hand');
+      } } },
+    // 回復カード (2026-11)
+    { id: 'gen_47', name: '血吸いの騎士', type: 'monster', lineage: 'generic', role: 'engine', rarity: 'rare',
+      cost: 3, atk: 3, hp: 3, keywords: ['lifesteal'], tags: [],
+      text: '3/3。吸命（このモンスターがダメージを与えると、同じだけ自分のライフが回復する）',
+      flavor: '傷口から吸った命は、主のもとへ還る。',
+      effects: {} },
+    { id: 'gen_48', name: '再生の秘術', type: 'spell', lineage: 'generic', role: 'engine', rarity: 'rare',
+      cost: 3, keywords: [], tags: [],
+      text: '失ったライフの半分（切り捨て）を回復する',
+      effects: { onPlay: async function (ctx) {
+        const lost = Math.max(0, ctx.me.maxLife - ctx.me.life);
+        const n = Math.floor(lost / 2);
+        if (n <= 0) { ctx.log('失ったライフがない'); return; }
+        await ctx.heal(ctx.me, n);
       } } }
   ]);
 })(globalThis.G = globalThis.G || {});

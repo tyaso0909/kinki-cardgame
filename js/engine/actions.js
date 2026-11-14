@@ -260,6 +260,12 @@
       sp.stats.damageDealt += amount;
       if (isPlayer && amount > sp.maxDamageDealtOnce) sp.maxDamageDealtOnce = amount;
     }
+    // 吸命 (lifesteal): damage dealt by such a monster heals its owner by the same amount
+    if (source && source.defId && source.owner !== undefined && typeof g.hasKeyword === 'function' && g.hasKeyword(source, 'lifesteal')) {
+      const healer = g.players[source.owner];
+      const healed = this.heal(healer, amount);
+      if (healed) this.log('吸命：' + healer.name + 'のライフ+' + healed);
+    }
     await g.trigger('onDamageDealt', { source: source, sourceOwner: srcOwner, target: target, amount: amount, who: srcOwner });
     if (isPlayer) {
       await g.trigger('onPlayerDamaged', { who: target.idx, amount: amount, source: source });
