@@ -553,7 +553,8 @@
     if (!list.length) return null;
     const g = S.game;
     let dmg = 0, swings = 0;
-    list.forEach((a) => { const m = g.findCard(a.uid); const n = Math.max(1, (m && m.attacksLeft) || 1); dmg += a.atk * n; swings += n; });
+    // 連撃 and 一瞬の永遠 ("攻撃したあと、もう一度攻撃できる") both add swings to the preview
+    list.forEach((a) => { const m = g.findCard(a.uid); const n = Math.max(1, m ? g.attacksRemaining(m) : 1); dmg += a.atk * n; swings += n; });
     return { count: list.length, dmg, swings };
   }
   function confirmAllOut() {
@@ -579,14 +580,13 @@
       const list = faceAttackers();
       if (!list.length) break;
       const a = list[0];
-      const before = g.findCard(a.uid);
-      const leftBefore = before ? before.attacksLeft : 0;
-      if (S.anim && list.length > 2) S.anim.fast = true;   // keep long volleys snappy
+      const actionsBefore = g.turnActions.length;
+      if (S.anim && (list.length > 2 || faceVolley().swings > 2)) S.anim.fast = true;   // keep long volleys snappy
       await runAction(() => g.attack(0, a.uid, 'face'), { attackUid: a.uid, target: 'face' });
       if (!S || g.winner !== null) return;
-      const after = g.findCard(a.uid);
-      // no progress (attack refused / still able with same count) → stop instead of looping forever
-      if (after && after.attacksLeft === leftBefore && faceAttackers().some((x) => x.uid === a.uid)) break;
+      // no progress (the attack was refused) → stop instead of looping forever. An attack that leaves the
+      // attacker's count unchanged is still progress: 一瞬の永遠 gives the attack back once (QA fix).
+      if (g.turnActions.length === actionsBefore) break;
     }
     if (S) refresh();
   }

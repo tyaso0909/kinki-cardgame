@@ -377,6 +377,12 @@
   };
   // 連撃 (double): 2 attacks per turn
   Game.prototype.attacksPerTurn = function (inst) { return this.hasKeyword(inst, 'double') ? 2 : 1; };
+  // Attacks this monster can still make this turn, counting the extra one 一瞬の永遠 grants after its next attack.
+  Game.prototype.attacksRemaining = function (inst) {
+    const left = Math.max(0, inst.attacksLeft || 0);
+    if (!left) return 0;
+    return left + (this.status(inst.owner, 'attackTwice') && !(inst.flags && inst.flags.attackedTwice) ? 1 : 0);
+  };
   // 加護 (ward): can't be chosen by the opponent's effects. `actorIdx` = whose effect is choosing.
   Game.prototype.isWardedFrom = function (inst, actorIdx) {
     return !!(inst && inst.keywords && inst.owner !== undefined && actorIdx !== undefined && actorIdx !== null &&
