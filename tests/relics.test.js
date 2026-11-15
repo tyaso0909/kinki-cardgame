@@ -147,8 +147,9 @@
   });
 
   test('終焉遺物: 骸骨の鍵束, 黒い蝋燭, 冥府の契約書', async function () {
-    const g = await battle(['relic_skeleton_keys', 'relic_black_candle', 'relic_underworld_contract'], [], deck(7).concat(['tc_key2', 'tc_vanilla']), deck(8));
-    ok(byDef(g.players[0].hand, 'tc_key2'), 'key tutored');
+    const g = await battle(['relic_skeleton_keys', 'relic_black_candle', 'relic_underworld_contract'], [], deck(9), deck(8));
+    const gate = byDef(g.players[0].hand, 'doom_37');
+    ok(gate && gate.oboro, '鍵束 put an oboro 終末への門 into the hand');
     eq(g.players[1].curseLimit, 15); eq(g.players[0].curseLimit, 20);
     const ctx = g.makeCtx(0, null); await ctx.loseLife(0, 4); eq(g.players[1].curse, 4, 'contract');
     await ctx.addCurse(1, 11); eq(g.winner, 0); eq(g.winReason, 'curse');
@@ -195,7 +196,10 @@
       deck(5).concat(['gen_04', 'tc_vanilla', 'tc_vanilla', 'tc_vanilla', 'tc_vanilla']), deck(12));
     eq(g2.players[0].hand.length, 4, 'gloves stole 1'); eq(g2.players[1].hand.length, 5 + 1 + 1, 'stolen + mirror copy');
     eq(g2.players[1].vault.length, 1); eq(g2.players[1].vault[0].defId, 'gen_04', 'loupe prefers the disrupt card');
-    eq(g2.players[1].seals.length, 1); eq(g2.players[1].seals[0].defId, 'doom_05');
+    eq(g2.players[1].seals.length, 0, 'dusty keyring no longer seals a key');
+    eq(g2.players[1].flags.gateUses, 1, 'the gate counts as used once');
+    const keyOb = g2.players[1].deck.concat(g2.players[1].hand).filter(function (c) { return G.DoomGate.KEYS.indexOf(c.defId) >= 0; });
+    eq(keyOb.length, 5); ok(keyOb.every(function (c) { return c.oboro; }));
     ok(g2.players[1].hand.some(function (c) { return c.isCopy; }), 'fogged mirror copy');
     await g2.endTurn(0); await g2.endTurn(1); await g2.endTurn(0); await g2.endTurn(1); await g2.endTurn(0);
     eq(g2.players[1].turnsTaken, 3); eq(g2.players[1].extraTurns, 1, 'mad hourglass on 3rd turn');

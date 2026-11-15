@@ -30,25 +30,32 @@
     return r;
   }
   const deck = function (n) { return new Array(n || 10).fill('tb_vanilla'); };
-  const IDS = []; for (let i = 1; i <= 25; i++) IDS.push('doom_' + (i < 10 ? '0' : '') + i);
+  // doom_18（古の封印庫）は削除。doom_37 終末への門を追加
+  const IDS = []; for (let i = 1; i <= 25; i++) if (i !== 18) IDS.push('doom_' + (i < 10 ? '0' : '') + i);
+  IDS.push('doom_37');
+  const KEYS = ['doom_05', 'doom_06', 'doom_07', 'doom_14', 'doom_21'];
 
-  test('doom: all 25 cards registered with SPEC metadata', function () {
+  test('doom: 24 cards + 終末への門 registered; keys are oboro-only', function () {
     const names = ['墓場の骸骨兵', '呪いを運ぶ鴉', '墓守の死霊術師', '骨の祭司', '終末の鍵・第一', '終末の鍵・第二', '終末の鍵・第三', '呪詛の囁き', '生け贄の儀', '血の契約',
-      '封印破り', '呪いの刻印', '死者の行進', '終末の鍵・第四', '蘇りし不死の王', '呪詛の爆発', '屍山の巨人', '古の封印庫', '死者の国', '呪詛返し',
-      '終末の鍵・第五', '封印の解放者', '冥王の宣告', '冥界の門番', '終末の預言書'];
-    const costs = [1, 2, 3, 2, 1, 2, 2, 0, 0, 0, 2, 2, 1, 3, 5, 3, 6, 3, 3, 1, 4, 4, 5, 7, 9];
+      '封印破り', '呪いの刻印', '死者の行進', '終末の鍵・第四', '蘇りし不死の王', '呪詛の爆発', '屍山の巨人', '死者の国', '呪詛返し',
+      '終末の鍵・第五', '封印の解放者', '冥王の宣告', '冥界の門番', '終末の預言書', '終末への門'];
+    const costs = [1, 2, 3, 2, 1, 2, 2, 0, 0, 0, 2, 2, 1, 3, 5, 3, 6, 3, 1, 4, 4, 5, 7, 9, 2];
     const rar = ['common', 'common', 'common', 'common', 'common', 'common', 'common', 'common', 'common', 'common', 'common', 'common', 'common',
-      'rare', 'rare', 'rare', 'rare', 'rare', 'rare', 'rare', 'legend', 'legend', 'legend', 'legend', 'taboo'];
+      'rare', 'rare', 'rare', 'rare', 'rare', 'rare', 'legend', 'legend', 'legend', 'legend', 'taboo', 'common'];
     IDS.forEach(function (id, i) {
       const d = DB.get(id);
       eq(d.name, names[i], id); eq(d.cost, costs[i], id + ' cost'); eq(d.rarity, rar[i], id + ' rarity'); eq(d.lineage, 'doom');
     });
+    ok(!DB.has('doom_18'), '古の封印庫 removed');
     const types = { monster: 0, spell: 0, crest: 0, field: 0 };
     IDS.forEach(function (id) { types[DB.get(id).type]++; });
-    eq(types.monster, 8); eq(types.spell, 12); eq(types.crest, 4); eq(types.field, 1);
+    eq(types.monster, 8); eq(types.spell, 13); eq(types.crest, 3); eq(types.field, 1);
     eq(DB.get('doom_05').key, 1); eq(DB.get('doom_06').key, 2); eq(DB.get('doom_07').key, 3); eq(DB.get('doom_14').key, 4); eq(DB.get('doom_21').key, 5);
-    ['doom_05', 'doom_06', 'doom_07', 'doom_14', 'doom_21'].forEach(function (id) { ok(DB.get(id).tags.indexOf('key') >= 0, id + ' tag key'); });
-    ok(DB.get('doom_22').tags.indexOf('wild') >= 0);
+    KEYS.forEach(function (id) { ok(DB.get(id).tags.indexOf('key') >= 0, id + ' tag key'); ok(DB.get(id).oboroOnly, id + ' oboroOnly'); });
+    const pool = DB.pool().map(function (d) { return d.id; });
+    KEYS.forEach(function (id) { ok(pool.indexOf(id) < 0, id + ' not in the player pool'); });
+    ok(pool.indexOf('doom_37') >= 0, '門 is in the pool');
+    T.deepEq(DB.get('doom_37').related, KEYS);
     eq(DB.get('doom_25').timed, 3); ok(DB.get('doom_25').effects.fixedTimer && DB.get('doom_25').effects.indestructible);
   });
 
@@ -79,14 +86,12 @@
   });
 
   test('死霊術師 / 第三の鍵 / 死者の国 revive; 骨の祭司 & 封印庫 tutor keys', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_03', 'doom_04'], grave: ['tb_vanilla', 'tb_cheap'], mana: 10, deck: ['tb_vanilla', 'doom_14', 'tb_vanilla'] } });
+    const g = await T.sandbox({ p0: { hand: ['doom_03', 'doom_04'], grave: ['tb_vanilla', 'tb_cheap'], mana: 10, deck: ['tb_vanilla', 'tb_bolt', 'tb_vanilla'] } });
     await play(g, 0, 'doom_03');
     eq(g.players[0].board.length, 2); ok(byDef(g.players[0].board, 'tb_cheap') || byDef(g.players[0].board, 'tb_vanilla'), 'cost ≤2 monster revived');
     await play(g, 0, 'doom_04');
-    eq(g.players[0].life, 37); ok(byDef(g.players[0].hand, 'doom_14'), 'key tutored');
-    const g2 = await T.sandbox({ p0: { crests: ['doom_18'], deck: ['tb_vanilla', 'doom_05'] }, p1: { deck: deck(2) } });
-    await g2.endTurn(0); await g2.endTurn(1);
-    ok(byDef(g2.players[0].hand, 'doom_05'), '封印庫 tutors at turn start');
+    eq(g.players[0].life, 40, '骨の祭司 no longer costs life'); ok(byDef(g.players[0].hand, 'tb_bolt'), 'a spell (the only one) was added');
+    eq(g.players[0].deck.length, 2);
   });
 
   test('生け贄の儀 / 血の契約 / 死者の行進', async function () {
@@ -106,14 +111,35 @@
     eq(g.players[1].seals.length, 1, 'protected');
   });
 
-  test('第四の鍵 recovers a key from grave; 第五の鍵 casts a key from deck for free', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_14'], grave: ['doom_05', 'tb_zero'], mana: 10 } });
+  test('第二の鍵 3 damage to an enemy monster; 第四 returns a grave spell; 第五 tutors a key', async function () {
+    const g0 = await T.sandbox({ p0: { hand: ['doom_06'], mana: 5 }, p1: { board: ['tb_vanilla'] } });
+    await play(g0, 0, 'doom_06');
+    eq(g0.distinctKeys(0), 1); eq(g0.players[1].board.length, 0, '2/3 took 3'); eq(g0.players[1].curse, 0, 'no curse any more');
+    const g1 = await T.sandbox({ p0: { hand: ['doom_06'], mana: 5 } });
+    await play(g1, 0, 'doom_06'); eq(g1.distinctKeys(0), 1, 'playable without a target');
+    const g = await T.sandbox({ p0: { hand: ['doom_14'], grave: ['tb_vanilla', 'tb_zero'], mana: 10 } });
     await play(g, 0, 'doom_14');
-    eq(g.distinctKeys(0), 1); ok(byDef(g.players[0].hand, 'doom_05'));
+    eq(g.distinctKeys(0), 1); ok(byDef(g.players[0].hand, 'tb_zero'), 'spell back'); ok(byDef(g.players[0].grave, 'tb_vanilla'), 'monster stays');
     const g2 = await T.sandbox({ p0: { hand: ['doom_21'], deck: ['tb_vanilla', 'doom_06', 'tb_vanilla'], mana: 4 } });
     await play(g2, 0, 'doom_21');
-    eq(g2.distinctKeys(0), 2, 'fifth + second'); eq(g2.players[0].mana, 0); eq(g2.players[1].curse, 2, 'the free key resolved');
-    eq(g2.players[0].chain, 2, 'free cast of a real card counts as a play');
+    eq(g2.distinctKeys(0), 1, 'only the fifth is sealed'); ok(byDef(g2.players[0].hand, 'doom_06'), 'second key tutored to hand'); eq(g2.players[0].mana, 0);
+  });
+
+  test('終末への門: 1st use shuffles 5 key oboros in; 2nd use draws 2 and discards 1', async function () {
+    const g = await T.sandbox({ p0: { hand: ['doom_37', 'doom_37', 'tb_zero'], mana: 10, deck: deck(6) } });
+    await play(g, 0, 'doom_37');
+    const keys = g.players[0].deck.filter(function (c) { return KEYS.indexOf(c.defId) >= 0; });
+    eq(keys.length, 5); ok(keys.every(function (c) { return c.oboro; }), 'all oboro');
+    eq(new Set(keys.map(function (c) { return c.defId; })).size, 5, 'one of each');
+    eq(g.players[0].deck.length, 11); eq(g.players[0].flags.gateUses, 1);
+    const hand0 = g.players[0].hand.length, grave0 = g.players[0].grave.length;
+    await play(g, 0, 'doom_37');
+    eq(g.players[0].deck.length, 9, 'drew 2'); eq(g.players[0].hand.length, hand0 - 1 + 2 - 1, 'gate left, +2, -1');
+    eq(g.players[0].grave.length, grave0 + 2, 'gate + discarded card'); eq(g.players[0].flags.gateUses, 2);
+    eq(g.players[0].deck.filter(function (c) { return KEYS.indexOf(c.defId) >= 0; }).length + g.players[0].hand.filter(function (c) { return KEYS.indexOf(c.defId) >= 0; }).length
+      + g.players[0].grave.filter(function (c) { return KEYS.indexOf(c.defId) >= 0; }).length, 5, 'no extra keys on the 2nd use');
+    // the opponent's gate count is separate
+    eq(g.players[1].flags.gateUses || 0, 0);
   });
 
   test('蘇りし不死の王 returns for 5 life (chooser agrees); not when life ≤5', async function () {
@@ -157,15 +183,11 @@
     eq(g.players[0].board.length, 2, 'mine returned');
   });
 
-  test('封印の解放者: one seal counts as a missing key (4 kinds → win); none without seals', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_14'], board: ['doom_22'], seals: ['doom_05', 'doom_06', 'doom_07'], mana: 10 } });
-    eq(g.distinctKeys(0), 4);
-    await play(g, 0, 'doom_14');
-    eq(g.winner, 0); eq(g.winReason, 'seals');
-    const g2 = await T.sandbox({ p0: { board: ['doom_22'] } });
-    eq(g2.distinctKeys(0), 0, 'no seals → no wild');
-    const g3 = await T.sandbox({ p0: { hand: ['doom_22'], seals: ['doom_05', 'doom_06', 'doom_07', 'doom_14'], mana: 10 } });
-    await play(g3, 0, 'doom_22'); eq(g3.winner, 0, 'summoning the liberator with 4 keys wins immediately');
+  test('封印の解放者: tutors a crest; no longer a wild key', async function () {
+    const g = await T.sandbox({ p0: { hand: ['doom_22'], seals: ['doom_05', 'doom_06', 'doom_07', 'doom_14'], mana: 10, deck: ['tb_vanilla', 'doom_12', 'tb_vanilla'] } });
+    await play(g, 0, 'doom_22');
+    eq(g.winner, null, 'no wild key'); eq(g.distinctKeys(0), 4);
+    ok(byDef(g.players[0].hand, 'doom_12'), 'crest tutored');
   });
 
   test('冥界の門番: curse 2 per destroyed ally incl. phantoms', async function () {
@@ -218,11 +240,13 @@
     else { await g.makeCtx(0, null).destroy(ph); eq(g.players[1].curse, 4, 'phantom death counted'); }
   });
 
-  test('コンボ 鍵の一気集め: 5 distinct keys → seals win; 第五 pulls the last one', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_05', 'doom_06', 'doom_07', 'doom_21'], deck: ['tb_vanilla', 'doom_14'], mana: 20 } });
-    await play(g, 0, 'doom_05'); await play(g, 0, 'doom_06'); await play(g, 0, 'doom_07');
-    eq(g.distinctKeys(0), 3); eq(g.winner, null);
-    await play(g, 0, 'doom_21');
+  test('コンボ 鍵の一気集め: 門 → keys → 5 distinct keys → seals win', async function () {
+    const g = await T.sandbox({ p0: { hand: ['doom_37'], deck: ['tb_vanilla'], mana: 30 } });
+    await play(g, 0, 'doom_37');
+    // pull every key oboro to hand, then play them (第五 tutors nothing extra: all already in hand)
+    g.players[0].deck.filter(function (c) { return KEYS.indexOf(c.defId) >= 0; }).forEach(function (c) { g.removeFromZone(c); c.zone = 'hand'; g.players[0].hand.push(c); });
+    for (let i = 0; i < KEYS.length - 1; i++) { await play(g, 0, KEYS[i]); eq(g.winner, null); }
+    await play(g, 0, KEYS[4]);
     eq(g.winner, 0); eq(g.winReason, 'seals'); eq(g.players[0].seals.length, 5);
     // duplicates count once
     const g2 = await T.sandbox({ p0: { seals: ['doom_05', 'doom_05', 'doom_06'] } });

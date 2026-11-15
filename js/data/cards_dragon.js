@@ -192,9 +192,21 @@
       } } },
     { id: 'doom_35', name: '封じられし古竜', type: 'monster', lineage: 'doom', role: 'finisher', rarity: 'legend',
       cost: 3, atk: 12, hp: 12, tags: ['dragon', 'finisher'],
-      text: '12/12。攻撃できない。自分の封印ゾーンの鍵が3種類以上そろうと攻撃できる',
-      flavor: '鎖は三本目から、竜のほうを怖がり始める。',
-      effects: { attackCondition: function (game, inst) { return game.distinctKeys(inst.owner) >= 3; } } },
+      text: '12/12。封印：自分の墓地のカードが10枚以上になるまで攻撃できない。封印は一度解けたら戻らない',
+      flavor: '鎖は十本目から、竜のほうを怖がり始める。',
+      // 墓地10枚で封印解除（inst.flags.unsealed）。一度解ければ墓地が減っても攻撃できる
+      effects: {
+        attackCondition: function (game, inst) {
+          if (inst.flags && inst.flags.unsealed) return true;
+          if (game.players[inst.owner].grave.length >= 10) { inst.flags = inst.flags || {}; inst.flags.unsealed = true; return true; }
+          return false;
+        },
+        onCardToGrave: function (ctx) {
+          const inst = ctx.card;
+          if (!inst || inst.zone !== 'board' || (inst.flags && inst.flags.unsealed)) return;
+          if (ctx.game.players[inst.owner].grave.length >= 10) { inst.flags = inst.flags || {}; inst.flags.unsealed = true; ctx.log('封じられし古竜の封印が解けた'); }
+        }
+      } },
     // ================================================================ 汎用
     { id: 'gen_44', name: '竜狩りの大弩', type: 'spell', lineage: 'generic', role: 'disrupt', rarity: 'rare',
       cost: 3, tags: ['disrupt'],

@@ -128,12 +128,14 @@
   });
 
   // ---- ボス4 ----
-  test('陳列棚の鍵 is a wild key; 最後の展示 wins at 4 kinds; 蒐集の目録 fetches a key at turn start', async function () {
-    const g = await T.sandbox({ p0: { hand: ['boss4_01', 'boss4_03'], crests: ['boss4_02'], seals: ['tc_key1', 'tc_key2'], mana: 10, deck: ['tc_vanilla', 'tc_key3', 'tc_vanilla'] }, p1: { deck: deck(3) } });
+  test('陳列棚の鍵 is a wild key; 最後の展示 (6) wins at 4 kinds; 蒐集の目録 (5) returns a grave card at turn start', async function () {
+    eq(DB.get('boss4_02').cost, 5); eq(DB.get('boss4_03').cost, 6);
+    const g = await T.sandbox({ p0: { hand: ['boss4_01', 'boss4_03'], crests: ['boss4_02'], seals: ['tc_key1', 'tc_key2'], mana: 10, grave: ['tc_key3'], deck: ['tc_vanilla', 'tc_vanilla', 'tc_vanilla'] }, p1: { deck: deck(3) } });
     await play(g, 0, 'boss4_01'); eq(g.distinctKeys(0), 3);
     await play(g, 0, 'boss4_03'); eq(g.winner, null, '3 kinds: not yet');
     await g.endTurn(0); await g.endTurn(1);
-    ok(byDef(g.players[0].hand, 'tc_key3'), '目録 fetched the key from deck');
+    ok(byDef(g.players[0].hand, 'tc_key3') || byDef(g.players[0].hand, 'boss4_03'), '目録 returned a grave card');
+    if (!byDef(g.players[0].hand, 'tc_key3')) g.addCard(0, 'tc_key3', 'hand');
     g.players[0].mana = 10; g.addCard(0, 'boss4_03', 'hand');
     await play(g, 0, 'tc_key3'); eq(g.distinctKeys(0), 4);
     await play(g, 0, 'boss4_03'); eq(g.winner, 0); eq(g.winReason, 'seals');

@@ -165,7 +165,7 @@
     eq(g.players[0].phantoms.length, 5 + 7, 'one per dragon (1 + 5 phantoms + itself)');
   });
 
-  test('終焉: 骨竜の幼体 / 竜葬の儀 / 封じられし古竜 (attacks only with 3 kinds of keys)', async function () {
+  test('終焉: 骨竜の幼体 / 竜葬の儀 / 封じられし古竜 (unsealed at 10 grave cards, stays unsealed)', async function () {
     const g = await T.sandbox({ p0: { hand: ['doom_34', 'accel_14'], board: ['doom_33', { id: 'doom_35', summonedTurn: 0 }], mana: 30, deck: filler(5) }, p1: { deck: filler(5) } });
     const drake = byDef(g.players[0].hand, 'accel_14'); const c0 = g.costOf(0, drake);
     const old = mon(g, 0, 'doom_35');
@@ -174,8 +174,16 @@
     eq(g.costOf(0, drake), c0 - 2);
     await play(g, 0, 'doom_34', { targets: [old.uid] });
     eq(g.players[1].curse, 12);
-    const g2 = await T.sandbox({ p0: { board: [{ id: 'doom_35', summonedTurn: 0 }], seals: ['doom_05', 'doom_06', 'doom_07'], deck: filler(5) } });
-    ok(g2.canAttackWith(0, mon(g2, 0, 'doom_35')), 'three kinds of keys → can attack');
+    const g2 = await T.sandbox({ p0: { board: [{ id: 'doom_35', summonedTurn: 0 }], seals: ['doom_05', 'doom_06', 'doom_07'], grave: filler(9), deck: filler(5) } });
+    const o2 = mon(g2, 0, 'doom_35');
+    ok(!g2.canAttackWith(0, o2), 'keys do not matter; 9 in grave → still sealed');
+    await g2.makeCtx(0, null).discard(1, 0).catch(function () {});
+    await g2.makeCtx(0, null).mill(1, 0);
+    eq(g2.players[0].grave.length, 10);
+    ok(o2.flags.unsealed, 'unsealed the moment the 10th card hit the grave');
+    // shrink the grave: stays unsealed
+    const back = g2.players[0].grave.splice(0, 5); back.forEach(function (c) { c.zone = 'void'; });
+    ok(g2.canAttackWith(0, o2), 'once unsealed, stays unsealed');
   });
 
   test('汎用: 竜狩りの大弩 (destroy a dragon) / 竜の盟約 (my dragons have 加護)', async function () {

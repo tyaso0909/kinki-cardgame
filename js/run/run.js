@@ -101,6 +101,8 @@
     const st = G.Save.loadRun();
     if (!st) return null;
     Run.state = st; R = null; Run.rng();
+    // 削除されたカード（古の封印庫・封印の巨像など）は古いセーブのデッキから取り除く
+    if (Array.isArray(st.deck)) st.deck = st.deck.filter(function (id) { return G.CardDB.has(id); });
     return Run.nextScreen();
   };
   Run.nextScreen = function () {

@@ -454,6 +454,8 @@
     owner.grave.push(inst); g._ver++;
     g.emit('moveZone', { uid: inst.uid, defId: inst.defId, who: owner.idx, from: wasZone, to: 'grave' });
     if (def.type === 'spell' && wasZone !== 'hand' && wasZone !== 'deck') await g.trigger('onSpellToGrave', { card: inst, who: owner.idx });
+    // どこからでも墓地に置かれたとき（墓地の枚数を見るカード用）。ev.who = 墓地の持ち主
+    await g.trigger('onCardToGrave', { card: inst, who: owner.idx, from: wasZone, reason: opts.reason || null });
     return true;
   };
 

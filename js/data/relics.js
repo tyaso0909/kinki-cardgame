@@ -221,8 +221,8 @@
     } } });
 
   // 終焉
-  reg({ id: 'relic_skeleton_keys', name: '骸骨の鍵束', rarity: 'common', category: 'lineage', lineage: 'doom', text: '戦闘開始時、山札から鍵カード1枚を探して手札に加える',
-    effects: { onBattleStart: async function (ctx) { await ctx.tutor(Fx.isKey, ctx.owner, { prompt: '手札に加える鍵カードを選ぶ' }); } } });
+  reg({ id: 'relic_skeleton_keys', name: '骸骨の鍵束', rarity: 'common', category: 'lineage', lineage: 'doom', text: '戦闘開始時、終末への門の朧を手札に加える',
+    effects: { onBattleStart: async function (ctx) { if (DB.has('doom_37')) await ctx.createOboro('doom_37', ctx.owner, 'hand'); } } });
 
   reg({ id: 'relic_black_candle', name: '黒い蝋燭', rarity: 'rare', category: 'lineage', lineage: 'doom', text: '相手が呪詛で敗北するラインが20から15になる',
     effects: { onBattleStart: async function (ctx) { const o = ctx.game.players[1 - ctx.owner.idx]; o.curseLimit = Math.min(o.curseLimit, 15); ctx.log(o.name + 'の呪詛の限界は' + o.curseLimit + 'になった'); } } });
@@ -345,12 +345,14 @@
       await ctx.vaultSteal(pick, ctx.owner);
     } } });
 
-  reg({ id: 'relic_dusty_keyring', name: '埃をかぶった鍵束', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'doom', refs: ['doom_05'],
-    text: '戦闘開始時、封印ゾーンに終末の鍵・第一が置かれた状態で始まる',
+  reg({ id: 'relic_dusty_keyring', name: '埃をかぶった鍵束', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'doom', refs: ['doom_37'],
+    text: '戦闘開始時、終末への門を1回使った状態で始まる。鍵の朧5枚が山札に入り、次に使う門は2回目の効果になる',
     effects: { onBattleStart: async function (ctx) {
-      if (!DB.has('doom_05')) { ctx.log('終末の鍵・第一が存在しない'); return; }
-      const inst = ctx.game.createCardInst('doom_05', ctx.owner.idx);
-      await ctx.addSeal(inst, ctx.owner);
+      if (!G.DoomGate) { ctx.log('終末への門が存在しない'); return; }
+      const p = ctx.owner;
+      p.flags = p.flags || {};
+      p.flags.gateUses = (p.flags.gateUses || 0) + 1;
+      if (p.flags.gateUses === 1) await G.DoomGate.open(ctx, p);
     } } });
 
   reg({ id: 'relic_fogged_mirror', name: '曇った姿見', rarity: 'boss', category: 'enemy', enemyOnly: true, lineage: 'copy',

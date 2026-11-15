@@ -130,17 +130,15 @@
     text: '封印ゾーンに置く。まだそろっていない種類の鍵として扱う',
     effects: { onPlay: Fx.seal() } });
 
-  trump({ id: 'boss4_02', name: '蒐集の目録', type: 'crest', lineage: 'doom', role: 'engine', cost: 3,
-    text: '自分のターン開始時、山札か墓地から鍵カード1枚を手札に加える',
+  trump({ id: 'boss4_02', name: '蒐集の目録', type: 'crest', lineage: 'doom', role: 'engine', cost: 5,
+    text: '自分のターン開始時、自分の墓地のカード1枚を手札に戻す',
     effects: { onTurnStart: async function (ctx) {
-      const c = await U.chooseCardAcross(ctx, ctx.owner, ['deck', 'grave'], Fx.isKey, '手札に加える鍵カードを選ぶ');
-      if (!c) { ctx.log('鍵カードは見つからなかった'); return; }
-      const fromDeck = c.zone === 'deck';
-      await ctx.addToHand(c, ctx.owner);
-      if (fromDeck) ctx.shuffleDeck(ctx.owner);
+      if (!ctx.owner.grave.length) { ctx.log('墓地にカードがない'); return; }
+      const picked = await ctx.pick({ kind: 'graveCard', side: 'ally', count: 1, prompt: '手札に戻すカードを選ぶ', who: ctx.owner.idx });
+      if (picked[0]) await ctx.addToHand(picked[0], ctx.owner);
     } } });
 
-  trump({ id: 'boss4_03', name: '最後の展示', type: 'spell', lineage: 'doom', role: 'finisher', cost: 5, tags: ['finisher'],
+  trump({ id: 'boss4_03', name: '最後の展示', type: 'spell', lineage: 'doom', role: 'finisher', cost: 6, tags: ['finisher'],
     text: '自分の封印ゾーンに鍵が4種以上あるなら、勝利する',
     effects: { onPlay: async function (ctx) {
       if (ctx.game.distinctKeys(ctx.me.idx) >= 4) ctx.specialWin(ctx.me, 'seals');

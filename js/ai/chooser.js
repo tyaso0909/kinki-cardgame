@@ -50,7 +50,7 @@
   const ROLE_W = { engine: 3, finisher: 3, disrupt: 2.5, fuel: 1 };
   const RARITY_W = { common: 0, rare: 1.5, legend: 3, taboo: 4, boss: 3 };
   const PASSIVE_HOOKS = ['onCardPlayed', 'onSpellPlayed', 'onManaGained', 'onDraw', 'onTurnStart', 'onTurnEnd',
-    'onMonsterDestroyed', 'onMonsterSummoned', 'onPhantomCreated', 'onSpellToGrave', 'onDamageDealt', 'onExtraTurn',
+    'onMonsterDestroyed', 'onMonsterSummoned', 'onPhantomCreated', 'onSpellToGrave', 'onCardToGrave', 'onDamageDealt', 'onExtraTurn',
     'onCurseAdded', 'onLoopIteration', 'onChainReached', 'modCost', 'modManaGain', 'modChain', 'modDamage', 'modDrawCount', 'grants'];
 
   AI.hasPassive = function (def) {

@@ -67,7 +67,13 @@
   // ---- codex registrations ----
   function onCardObtained(defId) {
     if (!defId || !G.Codex) return false;
-    return safe(function () { return G.Codex.register('cards', defId); }, false);
+    return safe(function () {
+      const fresh = G.Codex.register('cards', defId);
+      // 関連カード（終末への門 → 終末の鍵・第一〜第五 など、朧としてだけ現れるもの）も一緒に図鑑に載せる
+      const def = G.CardDB && G.CardDB.tryGet ? G.CardDB.tryGet(defId) : null;
+      if (def && Array.isArray(def.related)) def.related.forEach(function (id) { if (G.CardDB.has(id)) G.Codex.register('cards', id); });
+      return fresh;
+    }, false);
   }
   function onRelicObtained(relicId) {
     if (!relicId || !G.Codex) return false;

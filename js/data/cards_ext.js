@@ -124,15 +124,6 @@
         const picked = await ctx.pick(Object.assign({}, ENEMY, { prompt: '破壊する相手のモンスターを選ぶ' }));
         if (picked[0]) await ctx.destroy(picked[0]); else ctx.log('破壊できる相手のモンスターがいない');
       } } },
-    { id: 'doom_28', name: '封印の巨像', type: 'monster', lineage: 'doom', role: 'engine', rarity: 'legend',
-      cost: 8, atk: 6, hp: 10, keywords: ['guard'],
-      text: '6/10。守護。召喚時、山札から種類の違う鍵カードを2枚探して手札に加える',
-      effects: { onSummon: async function (ctx) {
-        const first = await ctx.tutor(function (c, d) { return !!d.key; }, ctx.me, { prompt: '手札に加える鍵カードを選ぶ（1枚目）' });
-        if (!first) return;
-        const k = keyOf(first);
-        await ctx.tutor(function (c, d) { return !!d.key && d.key !== k; }, ctx.me, { prompt: '手札に加える鍵カードを選ぶ（2枚目・種類の違うもの）' });
-      } } },
     // ---- 汎用
     { id: 'gen_31', name: '不可侵の巨神', type: 'monster', lineage: 'generic', role: 'finisher', rarity: 'legend',
       cost: 8, atk: 9, hp: 9, keywords: ['ward', 'untouchable'], tags: ['finisher'],

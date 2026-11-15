@@ -28,7 +28,7 @@
 
 ### 常在・トリガー（§4.2）：場・紋章・フィールドにある間、遺物は常に
 `onCardPlayed, onSpellPlayed, onManaGained, onDraw, onTurnStart, onTurnEnd, onMonsterDestroyed, onMonsterSummoned,
-onPhantomCreated, onSpellToGrave, onDamageDealt, onReturnedToHand, onLifeLost, onExtraTurn, onExtraTurnStart, onCurseAdded,
+onPhantomCreated, onSpellToGrave, onCardToGrave, onDamageDealt, onReturnedToHand, onLifeLost, onExtraTurn, onExtraTurnStart, onCurseAdded,
 onLoopIteration, onChainReached, onSealAdded, onTimedSet, onTimedFired, onDiscard, onHandEmpty, onBattleStart, onLethal`
 修正フック（値を返す）: `modCost(ctx,{card,who,cost})`, `modManaGain`, `modChain`, `modDamage`, `modDrawCount`。
 `effects.scope = 'any'` で両者のイベントに反応（デフォルトは持ち主のみ）。

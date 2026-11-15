@@ -15,21 +15,22 @@
   }
   // a plain 2/3 test monster (no effects)
   if (!DB.has('tx_vanilla')) DB.register({ id: 'tx_vanilla', name: 'テスト用の兵士', type: 'monster', lineage: 'generic', role: 'fuel', rarity: 'common', cost: 1, atk: 2, hp: 3, text: '2/3', effects: {} });
+  if (!DB.has('tx_colossus')) DB.register({ id: 'tx_colossus', name: 'テスト用の巨像', type: 'monster', lineage: 'generic', role: 'fuel', rarity: 'common', cost: 8, atk: 6, hp: 10, keywords: ['guard'], text: '6/10', effects: {} });
   const filler = function (n, id) { return new Array(n).fill(id || 'basic_01'); };
   const ready = function (id, extra) { return Object.assign({ id: id, summonedTurn: 0, attacksLeft: 1 }, extra || {}); };
   const mon = function (g, i, id) { return byDef(g.monstersOf(i), id); };
 
   const IDS = {
-    monsters: ['accel_26', 'accel_27', 'accel_28', 'cycle_26', 'cycle_27', 'copy_26', 'copy_27', 'chain_26', 'chain_27', 'time_26', 'time_27', 'doom_26', 'doom_27', 'doom_28', 'gen_31', 'gen_32', 'gen_33'],
+    monsters: ['accel_26', 'accel_27', 'accel_28', 'cycle_26', 'cycle_27', 'copy_26', 'copy_27', 'chain_26', 'chain_27', 'time_26', 'time_27', 'doom_26', 'doom_27', 'gen_31', 'gen_32', 'gen_33'],
     buffs: ['gen_34', 'gen_35', 'accel_29', 'chain_28', 'copy_28', 'cycle_28', 'time_28', 'doom_30', 'gen_40'],
     debuffs: ['gen_36', 'gen_37', 'gen_38', 'time_29', 'chain_29', 'doom_29', 'copy_29', 'gen_39'],
     mana: ['accel_30', 'accel_31', 'accel_32', 'accel_33', 'cycle_29', 'time_30', 'chain_30', 'doom_31', 'copy_30', 'gen_41', 'gen_42'],
     combo: ['accel_34', 'accel_35', 'cycle_30', 'chain_31', 'copy_31', 'time_31', 'doom_32', 'gen_43']
   };
 
-  test('ext: 53 cards registered, in the pack pool, names unique', function () {
+  test('ext: 52 cards registered (封印の巨像 removed), in the pack pool, names unique', function () {
     const all = [].concat(IDS.monsters, IDS.buffs, IDS.debuffs, IDS.mana, IDS.combo);
-    eq(all.length, 53);
+    eq(all.length, 52); ok(!DB.has('doom_28'), '封印の巨像 removed');
     const pool = G.Data.poolForPacks().map(function (d) { return d.id; });
     all.forEach(function (id) { ok(DB.has(id), id); ok(pool.indexOf(id) >= 0, id + ' in pool'); ok(G.Data.isProjectCard(DB.get(id)), id + ' project card'); });
     IDS.monsters.forEach(function (id) { eq(DB.get(id).type, 'monster', id); });
@@ -178,13 +179,6 @@
     eq(g.players[1].board.length, 0);
   });
 
-  test('封印の巨像: tutors two keys of different kinds', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_28'], mana: 10, deck: ['doom_05', 'doom_05', 'doom_06', 'basic_01'] } });
-    await play(g, 0, 'doom_28');
-    const keys = g.players[0].hand.map(function (c) { return DB.get(c.defId).key; }).filter(Boolean);
-    eq(keys.length, 2); ok(keys[0] !== keys[1], 'different kinds');
-  });
-
   test('呪文喰らいの魔獣: +2 atk per opponent spell', async function () {
     const g = await T.sandbox({ first: 1, p0: { board: ['gen_32'], deck: filler(3) }, p1: { hand: ['gen_36', 'chain_05'], mana: 10, deck: filler(3) } });
     await play(g, 1, 'chain_05');
@@ -237,8 +231,8 @@
 
   // ---------------------------------------------------------------- debuffs
   test('debuffs: 脱力の呪い / 衰弱の霧 / 縮小の呪文 / 刻の剥落 / 入れ替えの鏡', async function () {
-    const g = await T.sandbox({ p0: { hand: ['gen_36', 'gen_37', 'gen_38', 'time_29', 'copy_29'], mana: 20, deck: filler(5) }, p1: { board: ['gen_33', 'cycle_27', 'doom_28', { id: 'tx_vanilla', hp: 1 }], deck: filler(5) } });
-    const beast = mon(g, 1, 'gen_33'), col = mon(g, 1, 'cycle_27'), sealc = mon(g, 1, 'doom_28');
+    const g = await T.sandbox({ p0: { hand: ['gen_36', 'gen_37', 'gen_38', 'time_29', 'copy_29'], mana: 20, deck: filler(5) }, p1: { board: ['gen_33', 'cycle_27', 'tx_colossus', { id: 'tx_vanilla', hp: 1 }], deck: filler(5) } });
+    const beast = mon(g, 1, 'gen_33'), col = mon(g, 1, 'cycle_27'), sealc = mon(g, 1, 'tx_colossus');
     await play(g, 0, 'gen_36', { targets: [beast.uid] });
     eq(g.atkOf(beast), 10); eq(g.maxHpOf(beast), 10);
     await play(g, 0, 'gen_37');

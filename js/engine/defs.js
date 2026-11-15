@@ -98,7 +98,8 @@
   const CardDB = makeRegistry('CardDB', validateCard);
   // Cards eligible for the player's pool (packs/rewards/shop).
   CardDB.pool = function (pred) {
-    return CardDB.filter(function (d) { return !d.bossOnly && d.rarity !== 'boss' && (!pred || pred(d)); });
+    // oboroOnly: 朧としてだけ現れるカード（終末の鍵・第一〜第五など）。パック・報酬・ショップには出ない
+    return CardDB.filter(function (d) { return !d.bossOnly && !d.oboroOnly && d.rarity !== 'boss' && (!pred || pred(d)); });
   };
   CardDB.byLineage = function (lineage) { return CardDB.pool(function (d) { return d.lineage === lineage; }); };
   CardDB.byRarity = function (rarity) { return CardDB.pool(function (d) { return d.rarity === rarity; }); };
