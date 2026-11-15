@@ -126,3 +126,13 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 
 ## Single-target picks ask the human (2026-11)
 - `P.pick` used to resolve automatically when the candidates exactly filled the count. For a human chooser owner (`!isAI` and not a simulation clone) it now always asks, so a lone target is still chosen by tapping it. AI players keep the shortcut. (Card targets chosen before play already always asked.)
+
+## 2pickモード（js/run/twopick.js / js/ui/screens/draft.js）
+- メニュー「2pickラン」→ 深度選択 → `G.Run.startNew({mode:'twopick'})`（phase `draft`）。マップ・敵・遺物・深度補正は通常ランと同じで、初期デッキの作り方だけが違う。
+- 1回のピック：7系統（加速・循環・複製・連鎖・時間・終焉・汎用）から重複なしで4系統を選び、各系統2枚（別カード）の組を出す。1組を取る（2枚）×15回＝30枚。
+- レア度：奇数回はコモン2枚、偶数回はレア2枚、5回目と15回目はコモン＋伝説。各カードが個別に一段上がる確率：コモン→レア10%、レア→伝説6%、伝説→禁忌1%（`G.TwoPick.UPGRADE`）。
+- 引き直し：1ドラフトで3回。4組すべてを同じスケジュールで引き直す（`G.Run.draftReroll()`）。
+- 15回目の後は `phase 'packopen'` に戻り、取った組の系統（汎用以外）で `G.Packs.starterRelicOffer` → 既存の初期遺物画面。
+- 記録：`meta.twoPick = {runs, clears, bestAct(4=踏破), maxDepthCleared, lastDeck}`。2pickのランでは通常の runsStarted / runsCleared / 深度の自動前進 / maxDepthCleared / lineageClears / パック解放 / ラン単位の称号判定を動かさない。図鑑登録・戦闘単位の記録（1ターン最大ダメージ等）・戦闘中の称号は共通。
+- 途中のパック入手（報酬・ショップ）は通常どおりパック。
+- テスト：tests/twopick.test.js。

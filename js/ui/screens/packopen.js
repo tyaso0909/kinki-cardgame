@@ -108,9 +108,10 @@
       try { const next = G.Run.chooseStarterRelic(chosen); ui.toast(G.RelicDB.get(chosen).name + 'を手に入れた'); await ui.run.go(next); }
       catch (e) { console.error(e); ui.toast(e.message, { kind: 'bad' }); S.busy = false; }
     } }, '出発する');
+    const two = G.Run.isTwoPick && G.Run.isTwoPick();
     root.appendChild(h('div', { class: 'col' },
-      h('div', { class: 'po-head' }, h('h1', null, '初期遺物'), steps(6)),
-      h('p', { class: 'po-lead' }, '開けた袋の系統に合わせて三つ。ひとつだけ持っていける。'),
+      h('div', { class: 'po-head' }, h('h1', null, '初期遺物'), two ? h('span', { class: 'tp-count t-num' }, '2pick') : steps(6)),
+      h('p', { class: 'po-lead' }, two ? '選んだ組の系統に合わせて三つ。ひとつだけ持っていける。' : '開けた袋の系統に合わせて三つ。ひとつだけ持っていける。'),
       h('div', { class: 'po-relics' }, tiles),
       h('div', { class: 'run-section' }, h('h2', null, 'デッキ', h('small', null, G.Run.state.deck.length + '枚')), ui.run.tally(G.Run.state.deck),
         h('div', { style: { textAlign: 'center', marginTop: '8px' } }, h('button', { class: 'btn sm ghost', type: 'button', onClick: () => ui.run.deckModal() }, 'デッキを見る'))),
@@ -123,6 +124,7 @@
       params = params || {};
       S = { root, busy: false };
       const st = G.Run.state;
+      if (st && st.phase === 'draft') { ui.app.show('draft', null, { replace: true }); return; }
       if (!st || st.phase !== 'packopen') {
         try { G.Run.startNew({ depth: params.depth, festival: params.festival, seed: params.seed }); }
         catch (e) { console.error(e); root.appendChild(h('div', { class: 'col' }, h('div', { class: 'stub' }, h('div', { class: 'stub-mark' }, '異常'), h('p', null, 'ランを始められませんでした。'), h('code', null, String(e.message))))); return; }

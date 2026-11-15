@@ -71,6 +71,14 @@
     return ul;
   }
 
+  function twoPickBlock(t) {
+    const reach = t.bestAct >= 4 ? '踏破' : t.bestAct > 0 ? '第' + ['一', '二', '三'][t.bestAct - 1] + '幕' : '—';
+    const cell = (label, val) => h('div', null, h('b', null, val), h('span', null, label));
+    return h('div', { class: 'tp-rec' },
+      cell('ラン', String(t.runs || 0) + '回'), cell('クリア', String(t.clears || 0) + '回'),
+      cell('最高到達', reach), cell('最高クリア深度', t.maxDepthCleared >= 0 ? String(t.maxDepthCleared) : '—'));
+  }
+
   function section(title, sub) {
     return h('div', { class: 'msection big' }, h('span', null, title), sub ? h('small', { class: 't-dim' }, sub) : null);
   }
@@ -88,6 +96,8 @@
           h('span', null, '解放深度 ', h('b', { class: 't-num' }, String(sum.depthUnlocked)))) : null,
         section('自分の記録'),
         recordsBlock(),
+        sum && sum.twoPick ? section('2pickの記録', '通常ランとは別') : null,
+        sum && sum.twoPick ? twoPickBlock(sum.twoPick) : null,
         section('挑戦と称号', titles.length + ' / ' + total),
         achievementsBlock(),
         section('お祭りランの記録', '端末内のみ'),

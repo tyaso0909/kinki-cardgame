@@ -14,7 +14,7 @@
     col.appendChild(h('div', { class: 're-title ' + (won ? 'win' : 'lose') }, won ? '踏破' : '敗北'));
     const bossName = sum.boss && G.EnemyDB.has(sum.boss) ? G.EnemyDB.get(sum.boss).name : '';
     col.appendChild(h('p', { class: 're-sub' }, won ? '鏡の主を越えた。禁域はまだ、奥がある。' : '第' + ['一', '二', '三'][(sum.act || 1) - 1] + '幕で倒れた。' + (bossName ? 'この幕のボスは' + bossName + 'だった。' : ''),
-      h('br'), '深度 ' + (sum.depth || 0) + (sum.festival ? '　お祭りラン：' + (sum.festival.name || '') : '')));
+      h('br'), (sum.mode === 'twopick' ? '2pick　' : '') + '深度 ' + (sum.depth || 0) + (sum.festival ? '　お祭りラン：' + (sum.festival.name || '') : '')));
     const meta = sum.meta || {};
     const titles = (meta.newAchievements || []).map((id) => (G.Achievements && G.Achievements.get ? (G.Achievements.get(id) || {}).title : null) || id);
     if (titles.length) col.appendChild(h('div', { class: 're-titles' }, titles.map((t) => h('span', null, t))));
@@ -24,7 +24,7 @@
     col.appendChild(h('div', { class: 're-stats' },
       stat(stats.battles || 0, '戦闘'), stat(stats.wins || 0, '勝利'), stat(stats.turns || 0, 'ターン'),
       stat(stats.maxDamageOneTurn || 0, '最大ダメージ'), stat(stats.maxChain || 0, '最大連鎖'), stat(stats.longestLoop || 0, '最長ループ'),
-      stat(stats.goldEarned || 0, '得たG'), stat(stats.packsOpened || 0, 'パック'), stat((sum.deck || []).length, 'デッキ枚数')));
+      stat(stats.goldEarned || 0, '得たG'), (sum.mode === 'twopick' ? stat(((sum.meta || {}).twoPick || {}).clears || 0, '2pickクリア') : stat(stats.packsOpened || 0, 'パック')), stat((sum.deck || []).length, 'デッキ枚数')));
 
     if (sum.topCards && sum.topCards.length) {
       col.appendChild(h('div', { class: 'run-section' }, h('h2', null, 'よく使ったカード'),

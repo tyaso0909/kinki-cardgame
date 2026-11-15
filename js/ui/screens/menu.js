@@ -36,24 +36,28 @@
   function notReady() { ui.toast('準備中'); }
 
   // 深度を選んでから出発（G.ui.depthPicker は screens/codex.js が提供。無ければそのまま進む）
-  function pickDepthThenGo() {
-    if (typeof ui.depthPicker !== 'function') { nav('packopen')(); return; }
+  function pickDepthThenGo(screen) {
+    screen = screen || 'packopen';
+    if (typeof ui.depthPicker !== 'function') { nav(screen)(); return; }
     ui.depthPicker().then((d) => {
       if (d === undefined) return;
       const el = document.querySelector('.hub-depth b');
       if (el) el.textContent = String(d);
-      nav('packopen')();
+      nav(screen)();
     });
   }
-  function startRun() {
+  function startRun(screen) {
+    screen = typeof screen === 'string' ? screen : 'packopen';
     if (hasRun()) {
       ui.confirm('進行中のランがあります。\n新しく始めると、今のランは消えます。', { ok: '新しく始める', cancel: '戻る', danger: true })
-        .then((ok) => { if (ok) { if (G.Run && typeof G.Run.abandon === 'function') G.Run.abandon(); pickDepthThenGo(); } });
+        .then((ok) => { if (ok) { if (G.Run && typeof G.Run.abandon === 'function') G.Run.abandon(); pickDepthThenGo(screen); } });
       return;
     }
     if (G.Run && G.Run.state && typeof G.Run.abandon === 'function') G.Run.abandon();
-    pickDepthThenGo();
+    pickDepthThenGo(screen);
   }
+  // 2pickモード：パックの代わりに2枚ひと組を15回選んで30枚のデッキを作る（記録は通常ランと別）
+  function startTwoPick() { startRun('draft'); }
   function continueRun() {
     if (!hasRun()) { ui.toast('続きはありません'); return; }
     if (G.Run && typeof G.Run.resume === 'function') {
@@ -81,8 +85,9 @@
           crest(),
           h('div', { class: 'hub-depth' }, '禁域の深度', h('b', null, depth == null ? '0' : String(depth))),
           h('div', { class: 'hub-menu' },
-            btn('ランを始める', 'パックを開けて出発', startRun, 'primary'),
+            btn('ランを始める', 'パックを開けて出発', () => startRun('packopen'), 'primary'),
             btn('続きから', canContinue ? '進行中のラン' : '', continueRun, canContinue ? '' : 'ghost'),
+            btn('2pickラン', '2枚ひと組を選んで30枚のデッキを作る', startTwoPick),
             btn('お祭りラン', '日替わりの特別ルール', nav('festival')),
             h('div', { class: 'pair' },
               btn('図鑑', null, nav('codex')),

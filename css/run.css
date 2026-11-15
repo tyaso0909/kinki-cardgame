@@ -358,3 +358,41 @@ html[data-theme="light"] .map-svg .edge.lit { stroke: var(--ink-dim); }
 @media (prefers-reduced-motion: reduce) {
   .map-node.available .halo, .map-svg .edge.open, .rest-fire .flame, .po-cards .slot.rare-taboo.shown .card-frame::after { animation: none; }
 }
+
+/* ---- 2pick draft (js/ui/screens/draft.js) ---- */
+.tp-count { font-family: var(--font-num); color: var(--ink-dim); font-size: var(--fs-s); }
+.tp-count b { color: var(--ink); font-size: var(--fs-l); }
+.tp-progress { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin: -4px 0 var(--sp-2); }
+.tp-progress i { display: block; height: 100%; background: var(--seal); transition: width var(--t-med); }
+.tp-tools { display: flex; gap: var(--sp-1); justify-content: space-between; align-items: center; margin-bottom: var(--sp-2); }
+.tp-rr { margin-left: 6px; font-family: var(--font-num); color: var(--ink-dim); font-size: var(--fs-xs); }
+.tp-pairs { display: grid; grid-template-columns: 1fr; gap: var(--sp-2); }
+@media (min-width: 640px) { .tp-pairs { grid-template-columns: 1fr 1fr; } }
+.tp-pair { border: 1px solid color-mix(in srgb, var(--lc) 45%, transparent); background: color-mix(in srgb, var(--lc) 7%, transparent); border-radius: var(--r-m, 10px); padding: 10px; display: flex; flex-direction: column; gap: 10px; transition: opacity var(--t-med), transform var(--t-med), box-shadow var(--t-med); }
+.tp-pair.has-legend { box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent) inset; }
+.tp-pair.has-taboo { box-shadow: 0 0 0 1px color-mix(in srgb, var(--boss) 70%, transparent) inset, 0 0 18px color-mix(in srgb, var(--boss) 30%, transparent); }
+.tp-pair.dim { opacity: .25; }
+.tp-pair.chosen { transform: scale(1.02); box-shadow: 0 0 0 2px var(--focus); }
+.tp-pair-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tp-pair-head .lin { display: inline-flex; align-items: center; gap: 6px; color: var(--lc); font-family: var(--font-title); letter-spacing: .12em; font-size: var(--fs-m); }
+.tp-pair-head .lin svg { width: 16px; height: 16px; }
+.tp-pair-head .rar { display: flex; gap: 4px; }
+.tp-pair-head .rar b { font-weight: 500; font-size: var(--fs-xs); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-dim); }
+.tp-pair-head .rar b.r-rare { color: var(--focus); border-color: color-mix(in srgb, var(--focus) 60%, transparent); }
+.tp-pair-head .rar b.r-legend { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+.tp-pair-head .rar b.r-taboo { color: var(--boss); border-color: color-mix(in srgb, var(--boss) 70%, transparent); }
+.tp-cards { display: flex; justify-content: center; gap: 10px; }
+.tp-cards .card { --cw: min(136px, calc((100vw - 76px) / 2)); }
+.tp-card.rare-legend .card { animation: glow calc(900ms * var(--anim)) ease-out both; }
+.tp-card.rare-taboo .card { animation: tabooGlow calc(1600ms * var(--anim)) ease-out both; }
+.tp-take { border-color: color-mix(in srgb, var(--lc) 55%, transparent); }
+.tp-curve { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: 96px; align-items: end; }
+.tp-curve .col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
+.tp-curve .col i { display: block; width: 70%; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--seal); }
+.tp-curve .col.zero i { background: var(--line); }
+.tp-curve .n { font-family: var(--font-num); font-size: var(--fs-xs); color: var(--ink); min-height: 1em; }
+.tp-curve .c { font-family: var(--font-num); font-size: var(--fs-xs); color: var(--ink-faint); }
+.tp-rec { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: var(--sp-2); }
+.tp-rec > div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; }
+.tp-rec b { font-family: var(--font-num); font-size: var(--fs-m); color: var(--ink); font-weight: 600; white-space: nowrap; }
+.tp-rec span { font-size: var(--fs-xs); color: var(--ink-dim); text-align: center; line-height: 1.3; }

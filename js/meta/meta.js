@@ -5,6 +5,7 @@
    G.Meta.onCardObtained(defId) / onRelicObtained(relicId) / onDiaryFound(diaryId)
    G.Meta.onBattleEnd(result, {enemyDef, act, run})  → {won, newAchievements:[ids], diaryId|null, recordsChanged:[keys], battle:{...}}
    G.Meta.onRunEnd({won, run})                        → {won, lineage, newAchievements, newPacks, depthCleared, depthUnlocked, festivalEntry}
+                                                      (run.mode 'twopick' → only meta.twoPick {runs, clears, bestAct, maxDepthCleared, lastDeck} changes)
    G.Meta.pickDiary(rng)                              uncollected base fragment (for イベント 10%) | null
    G.Meta.runLineage(deckDefIds)                      most common lineage of a deck ('accel'…) | null
    G.Meta.unlockedPacks()                             ['gold','dual','taboo'] subset
@@ -125,8 +126,20 @@
   }
 
   // ---- hooks ----
+  // 2pickモードの記録（通常ランの深度・クリア数・系統クリア・パック解放とは分ける）
+  function blankTwoPick() { return { runs: 0, clears: 0, bestAct: 0, maxDepthCleared: -1, lastDeck: [], lastRunAt: null }; }
+  function twoPickOf(m) { if (!m.twoPick || typeof m.twoPick !== 'object') m.twoPick = blankTwoPick(); return m.twoPick; }
+  function isTwoPick(run) { return !!(run && (run.mode === 'twopick' || (run.state && run.state.mode === 'twopick'))); }
+
   function onRunStart(info) {
     info = info || {};
+    if (info.mode === 'twopick') {
+      const depth2 = G.Depth ? G.Depth.clamp(info.depth == null ? G.Depth.current() : info.depth) : num(info.depth);
+      S.run = { mode: 'twopick', depth: depth2, festival: null, seed: info.seed, startedAt: new Date().toISOString(), packs: [], relic: info.relic || null };
+      Store.update(function (m) { const t = twoPickOf(m); t.runs = num(t.runs) + 1; t.lastRunAt = new Date().toISOString(); });
+      if (info.relic) onRelicObtained(typeof info.relic === 'string' ? info.relic : info.relic.id);
+      return S.run;
+    }
     const depth = G.Depth ? G.Depth.clamp(info.depth == null ? G.Depth.current() : info.depth) : num(info.depth);
     const festival = info.festival ? (typeof info.festival === 'string' && G.Festival ? G.Festival.forId(info.festival) : info.festival) : null;
     S.run = { depth: depth, festival: festival, seed: info.seed, startedAt: new Date().toISOString(), packs: info.packs || [], relic: info.relic || null };
@@ -190,6 +203,30 @@
     deck.forEach(onCardObtained);
     relics.forEach(onRelicObtained);
 
+    if (isTwoPick(run)) {
+      // 2pick: 専用の記録だけ更新。通常の深度・クリア数・系統クリア・パック解放・ラン単位の称号は動かさない
+      const act = num(run && (run.act || (run.state && run.state.act)));
+      out.mode = 'twopick';
+      Store.update(function (m) {
+        const t = twoPickOf(m);
+        t.lastDeck = deck.slice();
+        t.bestAct = Math.max(num(t.bestAct), won ? 4 : act);
+        if (won) {
+          t.clears = num(t.clears) + 1;
+          const prev = t.maxDepthCleared == null ? -1 : num(t.maxDepthCleared);
+          if (depth > prev) { t.maxDepthCleared = depth; out.depthCleared = true; }
+        }
+        out.twoPick = Object.assign({}, t, { lastDeck: undefined });
+      });
+      // lifetime battle bests (1ターン最大ダメージ等) and card use stay shared
+      if (G.Records && !(S.run && S.run.cardUseCounted)) safe(function () {
+        const st = (run && (run.stats || (run.state && run.state.stats))) || {};
+        if (st.cardUse && typeof st.cardUse === 'object') G.Records.addCardUse(st.cardUse);
+      });
+      S.run = null;
+      return out;
+    }
+
     Store.update(function (m) {
       m.lastRunDeck = deck.slice();
       if (won) {
@@ -249,6 +286,7 @@
       secretGraffiti: G.Codex ? safe(function () { return G.Codex.secretGraffitiUnlocked(); }, false) : false,
       festivalToday: G.Festival ? safe(function () { return G.Festival.today(); }, null) : null,
       lastRunDeck: Array.isArray(m.lastRunDeck) ? m.lastRunDeck.slice() : [],
+      twoPick: (function () { const t = Object.assign(blankTwoPick(), m.twoPick || {}); t.lastDeck = (t.lastDeck || []).slice(); return t; })(),
     };
   }
 

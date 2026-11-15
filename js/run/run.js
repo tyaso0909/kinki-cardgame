@@ -4,7 +4,8 @@
   // ---------------------------------------------------------------
   // js/run/run.js — G.Run: the roguelike run state machine (DOM-free).
   //
-  //   G.Run.startNew({depth, festival, seed}) → 'packopen'
+  //   G.Run.startNew({depth, festival, seed, mode}) → 'packopen' ('draft' when mode === 'twopick')
+  //   2pick: draft() / draftPick(i) → {cards, lineage, pick, done} / draftReroll() → offer ; isTwoPick()
   //   G.Run.resume() → screen name | null          G.Run.state (JSON) / save() / abandon()
   //   pack opening: packOffer() / openChosenPack(type) → {cards, step, done} / relicOffer() / chooseStarterRelic(id) → 'map'
   //   map:  map() / availableNodes() / currentNode() / goTo(nodeId) → screen / nodeInfo(id)
@@ -59,14 +60,15 @@
     opts = opts || {};
     const m = meta();
     const depth = opts.depth != null ? opts.depth : (m ? m.depth || 0 : 0);
-    const festival = opts.festival || null;
+    const twoPick = opts.mode === 'twopick';
+    const festival = twoPick ? null : (opts.festival || null);
     const seed = opts.seed != null ? (opts.seed >>> 0) : (festival && festival.seed != null ? (festival.seed >>> 0) : ((Date.now() ^ (Math.floor(Math.random() * 0xffffffff))) >>> 0));
     R = new G.RNG(seed);
     const mods = G.RunCommon.depthMods(depth);
     let maxLife = PLAYER_LIFE;
     Run.state = {
-      version: 1, seed: seed, rngState: R.state(), depth: depth, festival: festival ? { id: festival.id, name: festival.name, rules: festival.rules || {} } : null,
-      startedAt: Date.now(), phase: 'packopen', act: 1, map: null, position: null, visited: [],
+      version: 1, mode: twoPick ? 'twopick' : 'normal', seed: seed, rngState: R.state(), depth: depth, festival: festival ? { id: festival.id, name: festival.name, rules: festival.rules || {} } : null,
+      startedAt: Date.now(), phase: twoPick ? 'draft' : 'packopen', act: 1, map: null, position: null, visited: [],
       deck: [], relics: [], gold: 0, life: maxLife, maxLife: maxLife,
       flags: { usedEvents: [], ev: {} }, pending: {}, history: [],
       stats: { battles: 0, wins: 0, elitesBeaten: 0, bossesBeaten: 0, goldEarned: 0, cardsPlayed: 0, cardUse: {}, maxDamageOneTurn: 0, maxChain: 0, longestLoop: 0, turns: 0, packsOpened: 0, eventsSeen: 0 },
@@ -82,6 +84,12 @@
       if (taboo.length) st.deck.push(R.pick(taboo).id);
     }
     if (festival && festival.rules && festival.rules.doubleLife) { st.maxLife = maxLife * 2; st.life = st.maxLife; }
+    if (twoPick) {
+      // 2pickモード: 15回のピックで30枚。記録は通常ランと分ける（G.Meta が mode を見て分岐）
+      st.draft = { pick: 1, rerolls: G.TwoPick.REROLLS, offer: G.TwoPick.offer(R, 1), picks: [] };
+      Run.save();
+      return 'draft';
+    }
     st.packopen.offer = G.Packs.offer(R, { count: mods.packChoices || 3, meta: m, festival: festival, exclude: ['disrupt'] });   // 1パック目に妨害パックは出さない
     try { if (G.Save) G.Save.updateMeta(function (mm) { mm.runsStarted = (mm.runsStarted || 0) + 1; }); } catch (e) { /* ignore */ }
     Run.save();
@@ -99,6 +107,7 @@
     const st = Run.state; if (!st) return null;
     switch (st.phase) {
       case 'packopen': return 'packopen';
+      case 'draft': return 'draft';
       case 'map': return 'map';
       case 'battle': return st.pending.battle ? 'battle' : 'map';
       case 'reward': return st.pending.reward ? 'reward' : 'map';
@@ -132,13 +141,45 @@
     Run.save();
     return { cards: cards, step: po.step, done: done, guaranteed: guarantee };
   };
+  // ---- 2pick draft (initial deck, mode 'twopick') ------------------------------------------------
+  Run.isTwoPick = function () { return !!(Run.state && Run.state.mode === 'twopick'); };
+  Run.draft = function () { return S().draft || null; };
+  Run.draftPick = function (index) {
+    const st = S(), dr = st.draft;
+    if (st.phase !== 'draft' || !dr) throw new Error('Run: not drafting');
+    const pair = dr.offer && dr.offer[index];
+    if (!pair) throw new Error('Run: no such pair: ' + index);
+    pair.cards.forEach(function (id) { Run.addCard(id, { source: 'draft', silent: true }); });
+    dr.picks.push({ pick: dr.pick, lineage: pair.lineage, cards: pair.cards.slice() });
+    const done = dr.pick >= G.TwoPick.PICKS;
+    if (done) {
+      dr.offer = null;
+      st.phase = 'packopen';
+      st.packopen.relicOffer = G.Packs.starterRelicOffer(G.TwoPick.lineageTypes(dr.picks), Run.rng());
+    } else {
+      dr.pick++;
+      dr.offer = G.TwoPick.offer(Run.rng(), dr.pick);
+    }
+    Run.save();
+    return { cards: pair.cards.slice(), lineage: pair.lineage, pick: dr.picks.length, done: done };
+  };
+  Run.draftReroll = function () {
+    const st = S(), dr = st.draft;
+    if (st.phase !== 'draft' || !dr) throw new Error('Run: not drafting');
+    if (dr.rerolls <= 0) throw new Error('Run: no rerolls left');
+    dr.rerolls--;
+    dr.offer = G.TwoPick.offer(Run.rng(), dr.pick);
+    Run.save();
+    return dr.offer;
+  };
+
   Run.relicOffer = function () { const po = S().packopen; return po.relicOffer ? po.relicOffer.slice() : []; };
   Run.chooseStarterRelic = function (relicId) {
     const st = S(), po = st.packopen;
     if (!po.relicOffer || po.relicOffer.indexOf(relicId) < 0) throw new Error('Run: relic not offered');
     Run.addRelic(relicId, { source: 'starter' });
     po.chosenRelic = relicId;
-    metaHook('onRunStart', { seed: st.seed, packs: po.openedTypes.slice(), relic: relicId, depth: st.depth, festival: st.festival });
+    metaHook('onRunStart', { seed: st.seed, packs: po.openedTypes.slice(), relic: relicId, depth: st.depth, festival: st.festival, mode: st.mode || 'normal' });
     startAct(1);
     return 'map';
   };
@@ -491,10 +532,10 @@
     const won = opts.won != null ? !!opts.won : !!(st.pending.end && st.pending.end.won);
     const cardUse = st.stats.cardUse || {};
     const topCards = Object.keys(cardUse).sort(function (a, b) { return cardUse[b] - cardUse[a]; }).slice(0, 5).map(function (id) { return { defId: id, count: cardUse[id] }; });
-    const summary = { won: won, act: st.act, depth: st.depth, seed: st.seed, festival: st.festival, stats: Object.assign({}, st.stats), deck: st.deck.slice(), relics: st.relics.slice(),
+    const summary = { won: won, mode: st.mode || 'normal', act: st.act, depth: st.depth, seed: st.seed, festival: st.festival, stats: Object.assign({}, st.stats), deck: st.deck.slice(), relics: st.relics.slice(),
       topCards: topCards, lineage: Run.dominantLineage(st.deck), boss: st.map ? st.map.bossEnemyId : null, gold: st.gold, life: st.life, maxLife: st.maxLife, elapsedMs: Date.now() - (st.startedAt || Date.now()) };
     if (G.Meta && typeof G.Meta.onRunEnd === 'function') summary.meta = metaHook('onRunEnd', { won: won, run: st, summary: summary }) || null;
-    else {
+    else if (st.mode !== 'twopick') {
       // minimal meta bookkeeping when the meta agent's module is absent
       try {
         G.Save.updateMeta(function (m) {
