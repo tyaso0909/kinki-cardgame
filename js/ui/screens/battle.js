@@ -29,10 +29,15 @@
     const bar = el('.bt-prompt');
     if (!bar) return;
     ui.clear(bar);
+    if (S) S.promptCancel = null;
     if (!text) { bar.hidden = true; return; }
     bar.hidden = false;
     bar.appendChild(h('span', { class: 'ptext' }, text));
-    (buttons || []).filter(Boolean).forEach((b) => bar.appendChild(h('button', { class: 'btn sm ' + (b.cls || ''), type: 'button', onClick: b.onClick }, b.label)));
+    const list = (buttons || []).filter(Boolean);
+    list.forEach((b) => bar.appendChild(h('button', { class: 'btn sm ' + (b.cls || ''), type: 'button', onClick: b.onClick }, b.label)));
+    // a prompt with a やめる／閉じる button also closes on a tap anywhere outside it (see build())
+    const cancel = list.find((b) => b.label === 'やめる' || b.label === '閉じる');
+    if (S) S.promptCancel = cancel ? cancel.onClick : null;
   }
   function settings() { try { return ui.settings.get(); } catch (e) { return {}; } }
 
@@ -1073,6 +1078,17 @@
     frame.addEventListener('scroll', (e) => { if (e.target && e.target.classList && e.target.classList.contains('bt-hand')) updateHandNav(); }, true);
     S.onResize = () => { if (S) { updateHandNav(); renderPeek(); } };
     window.addEventListener('resize', S.onResize);
+    // tap on empty space (not a card, button, the prompt itself, the hand guide or the log) while a prompt with
+    // やめる／閉じる is open → same as pressing it (cards keep their own tap handling: tapping another card
+    // still switches the selection, and targets are still picked by tapping them)
+    frame.addEventListener('click', (e) => {
+      if (!S || !S.promptCancel) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('button, a, input, select, textarea, .card, [data-uid], [data-uids], [data-face], .bt-prompt, .bt-handnav, .bt-log, .bt-actions')) return;
+      const fn = S.promptCancel;
+      S.promptCancel = null;
+      fn();
+    });
     // tap anywhere during enemy sequences → fast-forward
     frame.addEventListener('pointerdown', () => { if (S && (S.enemyTurn || S.draining) && S.anim) { S.anim.fast = true; S.anim.skip(); } }, true);
   }

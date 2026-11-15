@@ -120,3 +120,6 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 ## 一斉攻撃 with extra attacks (2026-11 QA fix)
 - `Game.prototype.attacksRemaining(inst)`: attacksLeft plus the one extra attack 一瞬の永遠 (`attackTwice`) grants after the next attack. The 一斉攻撃 preview counts swings with it.
 - `onAllOut` treated "attacksLeft unchanged after an attack" as no progress and stopped; under 一瞬の永遠 the attack is given back once, so the volley halted after the first swing. Progress is now "the attack was recorded" (`turnActions` grew).
+
+## Prompt closes on an outside tap (2026-11)
+- `setPrompt` remembers the onClick of a やめる／閉じる button as `S.promptCancel`. A click on the battle frame that is not on a button, card, face, the prompt bar, the hand guide, the action bar or the log calls it (same as pressing やめる; target modes also run their onCancel). Prompts without such a button (mandatory picks) are unaffected.
