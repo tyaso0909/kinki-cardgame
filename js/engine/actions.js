@@ -893,8 +893,11 @@
     const count = spec.count || 1;
     if (!cands.length) return spec.kind === 'player' ? null : [];
     let result;
-    // spec.alwaysAsk: let the player choose even when the candidates exactly fill the count (禁忌召喚)
-    if (cands.length <= count && !spec.optional && !spec.upTo && !spec.alwaysAsk && spec.kind !== 'player') result = cands.slice();
+    // spec.alwaysAsk: let the player choose even when the candidates exactly fill the count (禁忌召喚).
+    // A human player is always asked (even with a single candidate) so the target is never picked silently;
+    // AI players keep the shortcut.
+    const human = !chooserOwner.isAI && !g._sim;
+    if (cands.length <= count && !spec.optional && !spec.upTo && !spec.alwaysAsk && !human && spec.kind !== 'player') result = cands.slice();
     else {
       const chooser = chooserOwner.chooser || Game.defaultChooser;
       g.pendingChoice = { who: chooserOwner.idx, spec: spec, candidates: cands.map(function (c) { return c.uid !== undefined ? c.uid : 'p' + c.idx; }) };
