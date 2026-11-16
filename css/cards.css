@@ -84,7 +84,7 @@ html[data-theme="light"] .card-frame {
   color: color-mix(in srgb, var(--lc, var(--generic)) 55%, white 45%);
   filter: drop-shadow(0 0 0.45em var(--lc, var(--generic)));
 }
-.card.has-panel .card-art .art-main { top: 2.7em; width: 5.8em; height: 5.8em; }
+.card.has-panel .card-art .art-main { top: 3em; width: 6.4em; height: 6.4em; }
 .card-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* bottom shade so the stats read on any art */
 .card-art::after {
@@ -167,7 +167,7 @@ html[data-theme="light"] .card-frame {
   position: absolute;
   z-index: 2;
   left: 0.3em; right: 0.3em; bottom: 0.3em;
-  height: 48%;   /* the same size on every card; long text shrinks instead of growing the panel */
+  height: 33%;   /* every card: the illustration keeps about half the card; long text shrinks instead of growing the panel */
   box-sizing: border-box;
   border-radius: 0.4em;
   background: rgba(12,9,20,.9);
@@ -178,13 +178,6 @@ html[data-theme="light"] .card-frame {
   gap: 0.3em;
 }
 .type-monster .card-panel { padding-top: 1em; }
-/* detail view (size l) and the card-choosing screens (2pick, rewards, shop, pack reveal, battle picks):
-   a smaller panel so the illustration takes about half the card */
-.card.size-l .card-panel,
-.tp-cards .card .card-panel, .card-pick .card .card-panel, .po-cards .card .card-panel, .bt-pickgrid .card .card-panel { height: 33%; }
-.card.size-l.has-panel .card-art .art-main,
-.tp-cards .card.has-panel .card-art .art-main, .card-pick .card.has-panel .card-art .art-main,
-.po-cards .card.has-panel .card-art .art-main, .bt-pickgrid .card.has-panel .card-art .art-main { top: 3em; width: 6.4em; height: 6.4em; }
 .card.text-overflow .card-text { -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
 
 /* ---------- keywords ---------- */

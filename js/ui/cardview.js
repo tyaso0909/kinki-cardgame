@@ -143,8 +143,8 @@
     const n = (text || '').length;
     if (!n) return '';
     // field cards are portrait now; their art band is taller, so a little less room for text than a spell
-    // 案C: the text panel may cover up to ~half the card (monsters lose a line to the stat corners)
-    let budget = def.type === 'monster' ? 52 : 70;
+    // 案C: the text panel is a third of the card (monsters lose a line to the stat corners)
+    let budget = def.type === 'monster' ? 32 : 45;
     if (hasKw) budget -= 12;
     if (hasFlavor) budget -= 14;
     const levels = [1, 0.78, 0.7, 0.62, 0.55, 0.5, 0.45];
