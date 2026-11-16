@@ -178,6 +178,9 @@ html[data-theme="light"] .card-frame {
   gap: 0.3em;
 }
 .type-monster .card-panel { padding-top: 1em; }
+/* detail view (size l): a smaller panel so the illustration takes about half the card */
+.card.size-l .card-panel { height: 33%; }
+.card.size-l.has-panel .card-art .art-main { top: 3em; width: 6.4em; height: 6.4em; }
 .card.text-overflow .card-text { -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
 
 /* ---------- keywords ---------- */
