@@ -143,9 +143,10 @@
     const n = (text || '').length;
     if (!n) return '';
     // field cards are portrait now; their art band is taller, so a little less room for text than a spell
-    let budget = def.type === 'monster' ? 18 : def.type === 'crest' ? 26 : def.type === 'field' ? 34 : 40;
-    if (hasKw) budget -= 10;
-    if (hasFlavor) budget -= 8;
+    // 案C: the text panel may cover up to ~half the card (monsters lose a line to the stat corners)
+    let budget = def.type === 'monster' ? 52 : 70;
+    if (hasKw) budget -= 12;
+    if (hasFlavor) budget -= 14;
     const levels = [1, 0.78, 0.7, 0.62, 0.55, 0.5, 0.45];
     for (let i = 0; i < levels.length; i++) {
       const cap = budget / (levels[i] * levels[i]);
@@ -160,9 +161,9 @@
   function setShrink(txt, level) {
     for (let i = 1; i <= SHRINK_LEVELS; i++) txt.classList.toggle('shrink-' + i, i === level);
   }
-  // Measure the rendered card and make the rules text fit: drop flavor, shrink
-  // the art band, then step the font down. Sizes m/l must show the whole text
-  // (size s hides it; the detail modal shows everything).
+  // Measure the rendered card and make the rules text fit: drop flavor, let the
+  // text panel grow over more of the art, then step the font down. Sizes m/l
+  // must show the whole text (size s has no panel).
   function fitCardText(el) {
     if (!el || !el.isConnected || el.classList.contains('size-s') || el.classList.contains('facedown')) return false;
     const txt = el.querySelector('.card-text');
@@ -233,62 +234,60 @@
       return el;
     }
 
+    // art: fills the whole card (an <img> when the card has art, else a lineage backdrop + type silhouette)
+    const art = h('div', { class: 'card-art' });
+    if (def.art) art.appendChild(h('img', { src: def.art, alt: '' }));
+    else {
+      art.appendChild(lineageGlyph(lineage, { class: 'art-mark' }));
+      art.appendChild(TYPE_ART[def.type] ? svgEl(TYPE_ART[def.type], { class: 'art-main' }) : lineageGlyph(lineage, { class: 'art-main' }));
+    }
+    frame.appendChild(art);
+
+    // name plate (beside the cost); size l adds a small "種類・系統・レア度" line
+    const nlen = (def.name || '').length;
+    // the plate holds ~6 characters at full size; longer names step the font down (n7 … n12)
+    const name = h('div', { class: 'card-name' + (nlen > 6 ? ' n' + Math.min(nlen, 12) : '') }, def.name || '');
+    const meta = size === 'l' ? h('div', { class: 'card-meta' }, [TYPE[def.type] || '', LINEAGE[lineage].name, RARITY[rarity] || ''].filter(Boolean).join('・')) : null;
+    frame.appendChild(h('div', { class: 'card-plate', title: LINEAGE[lineage].name + '・' + (RARITY[rarity] || '') }, name, meta));
+
     // cost
     if (opts.showCost !== false && def.type) {
       const cost = def.uncastable ? '∞' : opts.cost != null ? opts.cost : def.cost;
       const isX = cost === 'X' || cost === '∞';
       frame.appendChild(h('div', { class: 'card-cost' + (isX ? ' x' : ''), title: def.uncastable ? 'コスト∞（普通には出せない）' : 'コスト' }, h('span', null, isX ? cost : String(cost == null ? 0 : cost))));
     }
-    // rarity pip
-    frame.appendChild(h('div', { class: 'card-rar', title: RARITY[rarity] }, RARITY_PIP[rarity] || ''));
-    // glyph
-    frame.appendChild(h('div', { class: 'card-glyph', title: LINEAGE[lineage].name }, lineageGlyph(lineage)));
 
-    // art
-    const art = h('div', { class: 'card-art' });
-    if (def.art) art.appendChild(h('img', { src: def.art, alt: '' }));
-    else art.appendChild(TYPE_ART[def.type] ? svgEl(TYPE_ART[def.type]) : lineageGlyph(lineage));
-
-    const nlen = (def.name || '').length;
-    const name = h('div', { class: 'card-name' + (nlen > 9 ? ' xlong' : nlen > 7 ? ' long' : '') }, def.name || '');
+    // text panel (sizes m / l): keywords, rules text, flavor
     const kws = h('div', { class: 'card-kws' }, keywordChips(def, inst));
     const kwCount = kws.childElementCount;
-    // Flavor only when there is room: large view always, medium when rules text is short.
-    const tlen = (def.text || '').length;
-    // (a monster with keyword chips has no room left above its stats — flavor would sit on top of 攻/体)
-    const showFlavor = !!def.flavor && size !== 's' && tlen <= (def.type === 'monster' ? 14 : 26) && !(def.type === 'monster' && kwCount > 0);
-    const txt = h('div', { class: 'card-text' + shrinkClass(def.text, size, def, kwCount > 0, showFlavor) }, textNodes(def.text || ''));
-    const flavor = showFlavor ? h('div', { class: 'card-flavor' }, def.flavor) : null;
-
-    const foot = h('div', { class: 'card-foot' });
-    if (def.type === 'field' && opts.wide) {
-      frame.appendChild(art);
-      frame.appendChild(h('div', { class: 'card-body' }, name, kws, txt, flavor, foot));
-    } else {
-      frame.appendChild(art);
-      frame.appendChild(name);
-      frame.appendChild(kws);
-      frame.appendChild(txt);
-      if (flavor) frame.appendChild(flavor);
-      frame.appendChild(foot);
+    const hasPanel = size !== 's' && (!!def.text || kwCount > 0);
+    let panel = null;
+    if (hasPanel) {
+      // flavor text is not printed on the card (案C); the detail modal shows it under the card
+      const txt = h('div', { class: 'card-text' + shrinkClass(def.text, size, def, kwCount > 0, false) }, textNodes(def.text || ''));
+      panel = h('div', { class: 'card-panel' }, kws, txt);
+      frame.appendChild(panel);
+      el.classList.add('has-panel');
     }
 
-    // monster stats
+    // monster stats (on the panel's top corners when there is a panel, else the card's bottom corners)
     if (def.type === 'monster') {
       // X/X monsters (マナの巨人) read "X" until they are on the board (the battle passes real atk/hp then)
       const xOut = def.xStats && !(inst && (inst.zone === 'board' || inst.zone === 'phantoms'));
       const atk = xOut ? 'X' : inst && inst.atk != null ? inst.atk : def.atk;
       const hp = xOut ? 'X' : inst && inst.hp != null ? inst.hp : def.hp;
       const hurt = inst && inst.maxHp != null && hp < inst.maxHp;
-      const atkEl = h('div', { class: 'card-atk', 'data-label': '攻', title: '攻撃力' }, h('span', null, atk === undefined ? '?' : String(atk)));
-      const hpEl = h('div', { class: 'card-hp' + (hurt ? ' hurt' : ''), 'data-label': '体', title: '体力' }, h('span', null, hp === undefined ? '?' : String(hp)));
+      const atkEl = h('div', { class: 'card-atk', title: '攻撃力' }, h('span', null, atk === undefined ? '?' : String(atk)));
+      const hpEl = h('div', { class: 'card-hp' + (hurt ? ' hurt' : ''), title: '体力' }, h('span', null, hp === undefined ? '?' : String(hp)));
       if (inst && def.atk != null && atk > def.atk) atkEl.classList.add('card-stat-buff');
-      frame.appendChild(atkEl);
-      frame.appendChild(hpEl);
+      (panel || frame).appendChild(atkEl);
+      (panel || frame).appendChild(hpEl);
+    } else if (!panel) {
+      frame.appendChild(h('div', { class: 'card-typelbl' }, TYPE[def.type] || ''));
     }
 
     if (opts.count != null) el.appendChild(h('span', { class: 'card-count' }, String(opts.count)));
-    if (size !== 's' && def.text && opts.fit !== false) scheduleFit(el);
+    if (hasPanel && def.text && opts.fit !== false) scheduleFit(el);
     return el;
   }
 
@@ -308,7 +307,6 @@
       def.type === 'monster' ? h('dt', null, '攻撃／体力') : null,
       def.type === 'monster' ? h('dd', { class: 't-num' }, def.xStats ? 'X / X' : String(def.atk) + ' / ' + String(def.hp)) : null,
     );
-    const kwChips = keywordChips(def, isInst(x) ? x : null);
     const kwList = ((isInst(x) && x.keywords) || def.keywords || []);
     const glossary = KEYWORDS.filter(function (k) { return kwList.includes(k.id); }).map(function (k) { return { name: k.name, rule: k.rule }; })
       .concat(TERMS.filter(function (t) {
@@ -318,7 +316,7 @@
     const body = h('div', { class: 'card-detail lin-' + lineage },
       renderCard(def, { size: 'l' }),
       facts,
-      h('div', { class: 'detail-text' }, kwChips.length ? h('div', { class: 'card-kws', style: { margin: '0 0 8px', fontSize: '16px' } }, kwChips) : null, textNodes(def.text || '（効果なし）')),
+      def.text ? null : h('div', { class: 'detail-text' }, '（効果なし）'),
       glossary.length ? h('dl', { class: 'detail-kwrules' }, glossary.map(function (k) { return [h('dt', null, k.name), h('dd', null, k.rule)]; })) : null,
       def.flavor ? h('div', { class: 'detail-flavor' }, def.flavor) : null,
     );

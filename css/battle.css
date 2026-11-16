@@ -352,7 +352,6 @@
 .bt-hand .card.sel { transform: translateY(-10px) scale(1.05); }
 .bt-hand .card.from-grave { outline: 1px dashed var(--ink-dim); outline-offset: 2px; }
 .bt-hand .card.from-grave::after { content: "墓地"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 9px; padding: 0 4px; background: var(--surface-3); border-radius: 2px; color: var(--ink-dim); }
-.bt-hand .card.size-s .card-name { font-size: 1em; }
 
 /* ---------- actions ---------- */
 .bt-actions {
@@ -644,7 +643,7 @@ html[data-theme="light"] .ba-num { text-shadow: 0 1px 0 #fff, 0 0 10px rgba(255,
   .bt-hand .card.size-m { --cw: 132px; }
   .bt-hand { min-height: 210px; }
   .bt-hand.fan .card { margin-left: 0; }
-  .bt-hand.fan .card + .card { margin-left: -14px; }
+  .bt-hand.fan .card + .card { margin-left: -6px; }
 }
 @media (min-width: 1024px) {
   /* large hands (>6 mid-turn) scroll instead of spilling off the left edge */
@@ -832,3 +831,11 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
   font-size: 10px; line-height: 1; padding: 2px 6px; border-radius: 6px; white-space: nowrap;
   background: var(--taboo, #c23a6b); color: #fff3f7; pointer-events: none;
 }
+
+/* ---------- 案C (2026-11): board monsters are square tokens — art + attack / health only ---------- */
+.bt-board .card { aspect-ratio: 1 / 1; }
+.bt-board .card .card-plate, .bt-board .card .card-typelbl { display: none; }
+.bt-board .card .card-art .art-main { top: 0.9em; width: 6.8em; height: 6.8em; }
+.bt-board .card .card-atk, .bt-board .card .card-hp { width: 3.1em; height: 3.1em; }
+.bt-board .card .card-atk span, .bt-board .card .card-hp span { font-size: 1.75em; }
+.bt-board .card.phantom::after, .bt-board .card.oboro::after { top: 0.5em; }

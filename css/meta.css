@@ -65,7 +65,8 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.6em;
 }
-.card.unknown .card-art { height: auto; margin: 0; background: none; border: 0; box-shadow: none; }
+.card.unknown .card-art { position: static; height: auto; margin: 0; background: none; border: 0; box-shadow: none; }
+.card.unknown .card-art::after { display: none; }
 .card.unknown .card-art svg { width: 3.2em; height: 3.2em; color: var(--ink-faint); opacity: .55; }
 .card.unknown .card-name { position: static; margin: 0; font-family: var(--font-title); color: var(--ink-faint); letter-spacing: 0.3em; font-size: 1.3em; text-shadow: none; background: none; }
 .card.unknown.clickable { cursor: pointer; }
