@@ -161,9 +161,9 @@
   function setShrink(txt, level) {
     for (let i = 1; i <= SHRINK_LEVELS; i++) txt.classList.toggle('shrink-' + i, i === level);
   }
-  // Measure the rendered card and make the rules text fit: drop flavor, let the
-  // text panel grow over more of the art, then step the font down. Sizes m/l
-  // must show the whole text (size s has no panel).
+  // Measure the rendered card and make the rules text fit the text panel (the
+  // panel is the same height on every card): drop flavor, then step the font
+  // down. Sizes m/l must show the whole text (size s has no panel).
   function fitCardText(el) {
     if (!el || !el.isConnected || el.classList.contains('size-s') || el.classList.contains('facedown')) return false;
     const txt = el.querySelector('.card-text');
@@ -174,8 +174,6 @@
     if (fits()) return true;
     const fl = el.querySelector('.card-flavor');
     if (fl) { fl.remove(); if (fits()) return true; }
-    el.classList.add('compact-art');
-    if (fits()) return true;
     for (let i = currentShrink(txt) + 1; i <= SHRINK_LEVELS; i++) {
       setShrink(txt, i);
       if (fits()) return true;

@@ -167,7 +167,7 @@ html[data-theme="light"] .card-frame {
   position: absolute;
   z-index: 2;
   left: 0.3em; right: 0.3em; bottom: 0.3em;
-  max-height: 54%;
+  height: 48%;   /* the same size on every card; long text shrinks instead of growing the panel */
   box-sizing: border-box;
   border-radius: 0.4em;
   background: rgba(12,9,20,.9);
@@ -178,8 +178,6 @@ html[data-theme="light"] .card-frame {
   gap: 0.3em;
 }
 .type-monster .card-panel { padding-top: 1em; }
-/* fitCardText(): when the text still does not fit, the panel may grow over more of the art */
-.card.compact-art .card-panel { max-height: 66%; }
 .card.text-overflow .card-text { -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
 
 /* ---------- keywords ---------- */
