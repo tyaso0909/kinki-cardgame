@@ -31,16 +31,16 @@
   });
 
   // ---------------------------------------------------------------- 禁忌の竜: hand ability
-  test('禁忌の竜: cannot be played; hand ability needs 4 same-lineage monsters (either side, phantoms, 加護 too)', async function () {
-    const g = await T.sandbox({ p0: { hand: ['copy_35'], board: ['copy_03'], phantoms: ['copy_02'], mana: 99, deck: filler(5) }, p1: { board: ['copy_03', 'gen_31'], deck: filler(5) } });
+  test('禁忌の竜: cannot be played; hand ability needs 2 same-lineage monsters (either side, phantoms, 加護 too)', async function () {
+    const g = await T.sandbox({ p0: { hand: ['copy_35'], phantoms: ['copy_02'], mana: 99, deck: filler(5) }, p1: { board: ['gen_31'], deck: filler(5) } });
     const card = byDef(g.players[0].hand, 'copy_35');
     eq(g.canPlayCard(0, card).reason, 'uncastable');
-    ok(!g.getAbilities(0).some(function (a) { return a.uid === card.uid; }), 'only 3 copy monsters → not yet');
+    ok(!g.getAbilities(0).some(function (a) { return a.uid === card.uid; }), 'only 1 copy monster → not yet');
     // a warded copy monster on the enemy side counts too
     const c1 = g.makeCtx(1, null);
     const w = g.addCard(1, 'copy_03', 'board'); w.keywords.push('ward');
     const ab = g.getAbilities(0).find(function (a) { return a.uid === card.uid; });
-    ok(ab, 'ability available with 4 (incl. a phantom and a warded enemy)');
+    ok(ab, 'ability available with 2 (a phantom and a warded enemy)');
     const r = await g.useAbility(0, card.uid, []);
     ok(r.ok, r.reason);
     eq(g.players[1].board.filter(function (m) { return m.defId === 'copy_03'; }).length, 0, 'enemy copy monsters destroyed');
@@ -52,7 +52,7 @@
   });
 
   test('禁忌の劫火竜: refill mana, damage = mana gained; 15/15 rush pierce', async function () {
-    const g = await T.sandbox({ p0: { hand: ['accel_39'], board: ['accel_01', 'accel_01', 'accel_01', 'accel_01'], mana: 2, maxMana: 10, deck: filler(5) } });
+    const g = await T.sandbox({ p0: { hand: ['accel_39'], board: ['accel_01', 'accel_01'], mana: 2, maxMana: 10, deck: filler(5) } });
     const card = byDef(g.players[0].hand, 'accel_39');
     await g.useAbility(0, card.uid, []);
     const d = mon(g, 0, 'accel_39');
@@ -61,16 +61,17 @@
     ok(g.canAttackWith(0, d), 'rush');
   });
 
-  test('禁忌の万巻竜: draw 5, mill hand×3', async function () {
-    const g = await T.sandbox({ p0: { hand: ['cycle_34'], board: ['cycle_02', 'cycle_02', 'cycle_02', 'cycle_02'], deck: filler(10) }, p1: { deck: filler(40) } });
+  test('禁忌の万巻竜: draw 5, then damage = hand×3 (no mill)', async function () {
+    const g = await T.sandbox({ p0: { hand: ['cycle_34'], board: ['cycle_02', 'cycle_02'], deck: filler(10) }, p1: { life: 60, deck: filler(40) } });
     await g.useAbility(0, byDef(g.players[0].hand, 'cycle_34').uid, []);
     const hand = g.players[0].hand.length;
     eq(hand, 1 + 5);
-    eq(g.players[1].deck.length, 40 - hand * 3);
+    eq(g.players[1].life, 60 - hand * 3);
+    eq(g.players[1].deck.length, 40, 'the enemy deck is untouched');
   });
 
   test('禁忌の天雷竜: chain +10 then that much to the player and every enemy monster', async function () {
-    const g = await T.sandbox({ p0: { hand: ['chain_35'], board: ['chain_01', 'chain_01', 'chain_01'], deck: filler(5) }, p1: { board: ['chain_01', 'gen_31'], deck: filler(5) } });
+    const g = await T.sandbox({ p0: { hand: ['chain_35'], board: ['chain_01'], deck: filler(5) }, p1: { board: ['chain_01', 'gen_31'], deck: filler(5) } });
     g.players[0].chain = 2;
     await g.useAbility(0, byDef(g.players[0].hand, 'chain_35').uid, []);
     eq(g.players[0].chain, 12); eq(g.players[1].life, 40 - 12);
@@ -78,14 +79,14 @@
   });
 
   test('禁忌の永劫竜: two extra turns, fires my timed cards now', async function () {
-    const g = await T.sandbox({ p0: { hand: ['time_35'], board: ['time_01', 'time_01', 'time_01', 'time_01'], timed: [{ id: 'time_07', count: 5 }], deck: filler(8) }, p1: { deck: filler(8) } });
+    const g = await T.sandbox({ p0: { hand: ['time_35'], board: ['time_01', 'time_01'], timed: [{ id: 'time_07', count: 5 }], deck: filler(8) }, p1: { deck: filler(8) } });
     await g.useAbility(0, byDef(g.players[0].hand, 'time_35').uid, []);
     eq(g.players[0].extraTurns, 2); eq(g.players[0].timed.length, 0); eq(g.players[1].life, 30);
     await g.endTurn(0); eq(g.active, 0); await g.endTurn(0); eq(g.active, 0); await g.endTurn(0); eq(g.active, 1);
   });
 
   test('禁忌の万華竜: five phantoms; my phantoms have 速攻 (and 連撃 from the copy)', async function () {
-    const g = await T.sandbox({ p0: { hand: ['copy_35'], board: ['copy_03', 'copy_03', 'copy_03', 'copy_03'], deck: filler(5) }, p1: { deck: filler(5) } });
+    const g = await T.sandbox({ p0: { hand: ['copy_35'], board: ['copy_03', 'copy_03'], deck: filler(5) }, p1: { deck: filler(5) } });
     await g.useAbility(0, byDef(g.players[0].hand, 'copy_35').uid, []);
     eq(g.players[0].phantoms.length, 5);
     const ph = g.players[0].phantoms[0];
@@ -94,9 +95,9 @@
   });
 
   test('禁忌の黄泉竜: curse 10; +3 curse per enemy monster destroyed', async function () {
-    const g = await T.sandbox({ p0: { hand: ['doom_36'], board: ['doom_01', 'doom_01', 'doom_01', 'doom_01'], deck: filler(5) }, p1: { board: ['tx_vanilla'], deck: filler(5) }, });
+    const g = await T.sandbox({ p0: { hand: ['doom_36'], board: ['doom_01', 'doom_01'], deck: filler(5) }, p1: { board: ['tx_vanilla'], deck: filler(5) }, });
     await g.useAbility(0, byDef(g.players[0].hand, 'doom_36').uid, []);
-    // 4 骸骨兵 died: each curses the enemy 1 (their own death effect)
+    // 2 骸骨兵 died: each curses the enemy 1 (their own death effect)
     const c0 = g.players[1].curse;
     ok(c0 >= 10);
     await g.makeCtx(0, null).destroy(g.players[1].board[0]);

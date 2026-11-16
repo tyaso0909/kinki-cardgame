@@ -5,7 +5,7 @@
   // cards_dragon.js — 竜を軸にしたカード 26枚（2026-11）
   //   各系統の子竜・補助・大きな竜（18）＋汎用2＋禁忌の竜6（汎用以外の各系統）。
   //   竜 = tags 'dragon' (shown as a 竜 chip). ids continue each lineage's numbering.
-  //   禁忌の竜: uncastable (cost ∞). effects.handAbility (once per turn, from the hand): destroy 4 monsters on
+  //   禁忌の竜: uncastable (cost ∞). effects.handAbility (once per turn, from the hand): destroy 2 monsters on
   //   the field — either side, phantoms count, 加護 doesn't protect — of the same lineage, then put this card's
   //   朧 copy onto the field (counts as a summon: 召喚時 fires). The card itself stays in hand.
   // ---------------------------------------------------------------
@@ -15,7 +15,7 @@
   function defOf(inst) { return DB.get(inst.defId); }
   function isDragon(inst) { return defOf(inst).tags.indexOf('dragon') >= 0; }
   function myDragons(ctx) { return ctx.monstersOf(ctx.me).filter(isDragon); }
-  const TABOO_COST = 4;
+  const TABOO_COST = 2;
 
   // pick one dragon in my hand (not the source card) — for cost reductions
   async function pickHandDragon(ctx, prompt, extra) {
@@ -67,7 +67,7 @@
       tags: ['dragon', 'finisher']
     }, def, {
       // 禁忌召喚 is explained in the card detail (G.ui.TERMS)
-      text: '禁忌召喚（' + def.linName + '4体）。' + def.text,
+      text: '禁忌召喚（' + def.linName + TABOO_COST + '体）。' + def.text,
       effects: Object.assign({ handAbility: tabooAbility(def.lineage) }, def.effects)
     });
   }
@@ -228,11 +228,12 @@
         if (n > 0 && ctx.game.winner === null) await ctx.damage(ctx.opp, n);
       } } }),
     taboo({ id: 'cycle_34', name: '禁忌の万巻竜', lineage: 'cycle', linName: '循環', atk: 12, hp: 12,
-      text: '12/12。召喚時、カードを5枚引く。その後、相手の山札の上から「自分の手札の枚数×3」枚を墓地に送る',
+      text: '12/12。召喚時、カードを5枚引く。その後、自分の手札の枚数×3ダメージを相手に与える',
       flavor: '読まれなかった頁から、竜は生まれる。',
       effects: { onSummon: async function (ctx) {
         await ctx.draw(5);
-        if (ctx.game.winner === null) await ctx.mill(ctx.me.hand.length * 3, ctx.opp);
+        const n = ctx.me.hand.length * 3;
+        if (ctx.game.winner === null && n > 0) await ctx.damage(ctx.opp, n);
       } } }),
     taboo({ id: 'chain_35', name: '禁忌の天雷竜', lineage: 'chain', linName: '連鎖', atk: 10, hp: 10, keywords: ['rush', 'double'],
       text: '10/10。速攻・連撃。召喚時、連鎖数+10。その後、連鎖数と同じダメージを、相手と相手のモンスターすべてに与える',
