@@ -802,7 +802,7 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
 /* ---------- keyword badges on board cards (battle_hud kwBadges) ---------- */
 .bt-board .card { position: relative; }
 .bt-kwb {
-  position: absolute; left: 50%; top: 4px; transform: translateX(-50%); z-index: 3;
+  position: absolute; left: 50%; top: 2.75em; transform: translateX(-50%); z-index: 3;   /* just under the name plate */
   display: flex; gap: 2px; pointer-events: none; white-space: nowrap;
 }
 .bt-kwb i {
@@ -832,10 +832,3 @@ html[data-theme="light"] .bt-actions .bt-allout b { color: #8f1f16; }
   background: var(--taboo, #c23a6b); color: #fff3f7; pointer-events: none;
 }
 
-/* ---------- 案C (2026-11): board monsters are square tokens — art + attack / health only ---------- */
-.bt-board .card { aspect-ratio: 1 / 1; }
-.bt-board .card .card-plate, .bt-board .card .card-typelbl { display: none; }
-.bt-board .card .card-art .art-main { top: 0.9em; width: 6.8em; height: 6.8em; }
-.bt-board .card .card-atk, .bt-board .card .card-hp { width: 3.1em; height: 3.1em; }
-.bt-board .card .card-atk span, .bt-board .card .card-hp span { font-size: 1.75em; }
-.bt-board .card.phantom::after, .bt-board .card.oboro::after { top: 0.5em; }

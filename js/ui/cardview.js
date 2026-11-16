@@ -208,6 +208,7 @@
     if (opts.disabled) cls.push('disabled');
     if (opts.onClick) cls.push('clickable');
     if (opts.faceDown) cls.push('facedown');
+    if (opts.showCost === false) cls.push('no-cost');   // board monsters: the name plate takes the full width
     if (def.type === 'field' && opts.wide) cls.push('wide');   // banner layout only when explicitly asked for
     if (inst && inst.isPhantom) cls.push('phantom');
     if (inst && inst.exhausted) cls.push('exhausted');

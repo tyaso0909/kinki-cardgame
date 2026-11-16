@@ -138,6 +138,8 @@ html[data-theme="light"] .card-frame {
   justify-content: center;
   gap: 0.05em;
 }
+/* no cost gem (monsters on the board): the plate spans the card */
+.card.no-cost .card-plate { left: 0.3em; padding-left: 0.45em; }
 .card-name {
   font-family: var(--font-title);
   font-weight: 800;
