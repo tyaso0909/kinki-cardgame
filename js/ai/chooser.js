@@ -51,7 +51,7 @@
   const RARITY_W = { common: 0, rare: 1.5, legend: 3, taboo: 4, boss: 3 };
   const PASSIVE_HOOKS = ['onCardPlayed', 'onSpellPlayed', 'onManaGained', 'onDraw', 'onTurnStart', 'onTurnEnd',
     'onMonsterDestroyed', 'onMonsterSummoned', 'onPhantomCreated', 'onSpellToGrave', 'onCardToGrave', 'onDamageDealt', 'onExtraTurn',
-    'onCurseAdded', 'onLoopIteration', 'onChainReached', 'modCost', 'modManaGain', 'modChain', 'modDamage', 'modDrawCount', 'grants'];
+    'onCurseAdded', 'onLoopIteration', 'onChainReached', 'onPhantomVanished', 'onTimedFired', 'modCost', 'modManaGain', 'modChain', 'modDamage', 'modDrawCount', 'grants'];
 
   AI.hasPassive = function (def) {
     const fx = def.effects || {};
@@ -108,6 +108,7 @@
     if (typeof fx.onDeath === 'function') b += 3;
     if (typeof fx.onSummon === 'function') b += 1.5;
     if (def.tags.indexOf('loopPart') >= 0) b += 3;
+    if (typeof fx.onSelfToGrave === 'function') b += 4; // 墓地に送られた時シリーズ: losing it is the point
     return b;
   };
 
@@ -177,6 +178,8 @@
         let s = base;
         if (inst.zone === 'board' || inst.zone === 'phantoms') s = game.atkOf(inst) + game.hpOf(inst) * 0.5 + (def.role === 'engine' ? 3 : 0) - AI.lossBenefit(def) * 1.5;
         if (inst.isPhantom) s -= 4;
+        // 墓地に送られた時 cards in hand/deck are the first to throw away (屍竜・灰被りの火蜥蜴…)
+        if ((inst.zone === 'hand' || inst.zone === 'deck') && typeof def.effects.onSelfToGrave === 'function') s -= 8;
         return -s; // lowest value first
       }
       case 'best': {

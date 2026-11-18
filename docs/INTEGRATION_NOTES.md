@@ -162,3 +162,14 @@ G.Festival.today() → {id, seed, name, rules:{allCostZero, twoFields, startTabo
 - 場のモンスターも手札と同じ形（名前の帯・イラスト・攻撃と体力）。コストは出さず、名前の帯がカードの幅いっぱいになる（`.no-cost`）。
 - フレーバーテキストはカードには載せず、詳細表示でカードの下に出す。詳細表示のカードは大きくし、効果の文章はカードの中で読む。
 - 枠の金属色はレア度（コモン＝銅、レア＝銀、伝説＝金、禁忌＝紫、ボス＝赤い鎖）。
+
+## カード工房の採用41枚（2026-11-18） — js/data/cards_workshop.js
+- ids: accel_40–42, cycle_35–42, copy_36–44, chain_36–42, time_36–42, doom_38–43, gen_49. Hidden helper `time_tok01`（大魔導士の時限魔法: oboroOnly, non-project id → never in packs/codex）.
+- Lineage counts after this (player cards): 加速・循環・連鎖・時間 42, 終焉 41 (incl. the 5 keys), 複製 44, 汎用 50.
+- New engine pieces:
+  - `effects.onSelfToGrave(ctx, {from, prevZone, reason})` fires from `ctx.toGrave` after `onCardToGrave` (墓地に送られた時シリーズ). `from` is the zone it left ('hand' discard / 'deck' mill / 'limbo' after destroy or resolve). 墓より這い出る屍竜 only reacts to hand/deck.
+  - Phantom disappearance is queued by `ctx.vanishPhantom` and fired as `onPhantomVanished {card, who}` by `Game.flushVanish()` — called by `ctx.consumePhantom`, at the end-of-turn vanish, after every action and at the end of `beginTurn`. Destroyed phantoms don't count.
+  - `effects.graveAbility` (枯れない花の戦士): `getAbilities` also scans the grave (`Game.abilityOf(inst)` picks hand/grave/in-play ability); `noGravePlay` (封じの番兵) stops it. UI: the card shows in the hand row with a 効果 badge (`battle_hud.hand`).
+  - `ctx.summonOboro(defId, who)` (スケルトンキング・時をかける女戦士); `player.flags.returnAtTurnStart` → summoned as 朧 at that player's next turn start (before onTurnStart).
+  - Statuses: `timedMultiplier` (effectTimes 'timed'; 年老いた大魔導士), `dragonGuard`, `allCharge` (keywordsOf), `chainHalfCarry` (endTurn halves the chain and `flags.chainCarried` skips the next reset; ライジン). `attackTargetsFor` now uses `hasKeyword(m,'guard')` so granted 守護 counts.
+  - `onTimedFired` ev gains `times` (時告げの鐘撞き deals 2 per firing).

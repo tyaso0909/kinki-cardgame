@@ -406,13 +406,32 @@
   };
 
   // Phantom simply disappears (end of turn / 霧払いの風). No onMonsterDestroyed.
+  // The disappearance is queued; Game.flushVanish fires onPhantomVanished for it (霧散の書・鏡の魔術師) at the next
+  // safe point (consumePhantom, end of turn, after every action).
   P.vanishPhantom = function (inst) {
     const g = this.game;
     if (inst.zone !== 'phantoms') return false;
     g.removeFromZone(inst); g._ver++;
     inst.zone = 'void';
     g.emit('vanish', { who: inst.owner, uid: inst.uid, defId: inst.defId });
+    (g._vanishQueue = g._vanishQueue || []).push({ card: inst, who: inst.owner });
     return true;
+  };
+  // 「幻影を消す」 by an effect (影送り・鏡砕き・幻影喰らい): vanish now and fire the vanish hooks right away.
+  P.consumePhantom = async function (inst) {
+    if (!this.vanishPhantom(inst)) return false;
+    this.log(this.nameOf(inst) + 'の幻影を消した');
+    await this.game.flushVanish();
+    return true;
+  };
+  // 朧 straight onto the board (スケルトンキング・時をかける女戦士). Counts as a summon. Returns inst or null (board full).
+  P.summonOboro = async function (defId, who, opts) {
+    const p = this.who(who);
+    const g = this.game;
+    if (p.board.length >= g.status(p.idx, 'maxBoard')) { this.log(p.name + 'の場はいっぱいだ'); return null; }
+    const inst = g.createCardInst(defId, p.idx, {});
+    inst.oboro = true;
+    return this.summon(inst, p, opts);
   };
 
   // Take a card out of its zone, firing onLeave if it was in play. onLeave may move the card
@@ -456,6 +475,16 @@
     if (def.type === 'spell' && wasZone !== 'hand' && wasZone !== 'deck') await g.trigger('onSpellToGrave', { card: inst, who: owner.idx });
     // どこからでも墓地に置かれたとき（墓地の枚数を見るカード用）。ev.who = 墓地の持ち主
     await g.trigger('onCardToGrave', { card: inst, who: owner.idx, from: wasZone, reason: opts.reason || null });
+    // 「このカードが墓地に送られた時」(2026-11 工房の墓地シリーズ): def.effects.onSelfToGrave(ctx, {from, prevZone, reason}).
+    // from = the zone it left ('hand' discard, 'deck' mill, 'limbo' after a destroy/resolve — prevZone tells where it was).
+    if (typeof def.effects.onSelfToGrave === 'function' && inst.zone === 'grave' && g.winner === null &&
+        !(def.type === 'monster' && g.status(owner.idx, 'noMonsterTriggers'))) {
+      const times = g.effectTimes(owner.idx, 'death');
+      const sev = { from: wasZone, prevZone: wasZone === 'limbo' ? (inst.prevZone || null) : wasZone, reason: opts.reason || null };
+      for (let t = 0; t < times && g.winner === null && inst.zone === 'grave'; t++) {
+        await def.effects.onSelfToGrave(g.makeCtx(owner.idx, inst, { invertible: true }), sev);
+      }
+    }
     return true;
   };
 
@@ -807,14 +836,17 @@
     }
     g.removeFromZone(inst); g._ver++;
     inst.zone = 'limbo';
+    let fired = 1;
     if (def.type === 'monster' && typeof def.effects.onTimed !== 'function') {
       const res = await this.summon(inst, owner);
       if (!res) await this.toGrave(inst, { reason: 'timedNoRoom' });
     } else if (typeof def.effects.onTimed === 'function') {
       const times = g.effectTimes(owner.idx, 'timed');
+      fired = times;
       for (let t = 0; t < times && g.winner === null; t++) await def.effects.onTimed(g.makeCtx(owner.idx, inst, { invertible: true }));
     }
-    await g.trigger('onTimedFired', { card: inst, who: owner.idx });
+    // ev.times: how many times the timed effect went off (年老いた大魔導士 makes it 2; 時告げの鐘撞き counts each)
+    await g.trigger('onTimedFired', { card: inst, who: owner.idx, times: fired });
     if (inst.zone === 'limbo') {
       if (inst.flags.reprised) await this.exile(inst);
       else if (!inst.flags.returnedOnce && g.status(owner.idx, 'timedReturnOnce')) {

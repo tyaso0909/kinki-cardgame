@@ -48,7 +48,7 @@
   test('codex: totals は図鑑の対象数（カード=非切り札、遺物44、敵29、日記35）', function () {
     const t = G.Codex.totals();
     eq(t.relics, 44); eq(t.enemies, 29); eq(t.diary, 35);
-    ok(t.cards >= 255 && t.cards <= 280, 'cards ' + t.cards); // 190 + 79 added in 2026-11
+    ok(t.cards >= 295 && t.cards <= 320, 'cards ' + t.cards); // 190 + 79 added in 2026-11 + 41 from the card workshop (2026-11-18)
     G.Codex.cardPool().forEach(function (d) { ok(!d.bossOnly, d.id + ' not bossOnly'); });
     G.Codex.relicPool().forEach(function (r) { ok(!r.hidden && !r.enemyOnly, r.id + ' visible'); });
   });

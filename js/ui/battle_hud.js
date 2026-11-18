@@ -236,7 +236,16 @@
         row.appendChild(el);
       });
     }
-    if (!n && !graveFromHand.length) row.appendChild(h('span', { class: 'bt-empty' }, '手札なし'));
+    // graveyard cards with an effect usable from the grave (枯れない花の戦士)
+    const graveAbs = (view.abilities || []).filter((a) => { const c = game.findCard(a.uid); return c && c.zone === 'grave' && !graveFromHand.some((x) => x.uid === a.uid); });
+    graveAbs.forEach((a) => {
+      const c = game.findCard(a.uid);
+      const el = ui.renderCard(c, { size: view.handSize || 's', onClick: (y, e, cardEl) => view.onCard(c, cardEl, 'grave'), selected: view.isSelected(c.uid) });
+      el.classList.add('from-grave', 'has-hand-ab');
+      el.appendChild(h('span', { class: 'bt-handab' }, '効果'));
+      row.appendChild(el);
+    });
+    if (!n && !graveFromHand.length && !graveAbs.length) row.appendChild(h('span', { class: 'bt-empty' }, '手札なし'));
     return row;
   }
 

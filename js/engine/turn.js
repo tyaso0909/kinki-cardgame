@@ -104,8 +104,9 @@
     if (firstTurn && p.flags.firstTurnManaBonus) { p.mana += p.flags.firstTurnManaBonus; p.flags.firstTurnManaBonus = 0; }
     this.emit('manaChange', { who: pIdx, mana: p.mana, maxMana: p.maxMana, delta: 0 });
     this.addLog(p.name + 'のマナ：' + p.mana + '/' + p.maxMana);
-    // chain: reset unless chainPersists; relics may start with chain>0 (雷の欠片)
-    if (!this.status(pIdx, 'chainPersists')) p.chain = 0;
+    // chain: reset unless chainPersists, or ライジン left half of it at the end of the last turn; relics may start with chain>0 (雷の欠片)
+    if (!this.status(pIdx, 'chainPersists') && !p.flags.chainCarried) p.chain = 0;
+    delete p.flags.chainCarried;
     const startChain = this.status(pIdx, 'chainAtTurnStart') || 0;
     if (startChain) await ctx.addChain(startChain, p);
     // reserves set by opponent become active
@@ -128,8 +129,18 @@
     this.phase = 'main';
     // snapshot "start of turn" = after mana/draw, before onTurnStart triggers (巻き戻しの鐘 / 時間逆行 restore here)
     this.pushTurnSnapshot();
+    // 時をかける女戦士: 朧 that come back at the start of this player's turn
+    const back = p.flags.returnAtTurnStart;
+    if (back && back.length) {
+      delete p.flags.returnAtTurnStart;
+      for (let i = 0; i < back.length && this.winner === null; i++) {
+        this.addLog(G.CardDB.get(back[i]).name + 'が時を越えて戻ってきた');
+        await ctx.summonOboro(back[i], p);
+      }
+    }
     await this.trigger('onTurnStart', { who: pIdx, extra: !!isExtra, streak: this.streak });
     if (isExtra) await this.trigger('onExtraTurnStart', { who: pIdx, streak: this.streak });
+    await this.flushVanish();
     await this.sweepDead();
     this.checkWin();
     void opp;
@@ -146,8 +157,14 @@
     await this.trigger('onTurnEnd', { who: pIdx, turn: this.turn });
     // hand limit
     if (this.winner === null) await this.enforceHandLimit(pIdx);
-    // chain reset (unless 世界を貫く雷)
-    if (!this.status(pIdx, 'chainPersists')) { p.chain = 0; this.emit('chain', { who: pIdx, chain: 0 }); }
+    // chain reset (unless 世界を貫く雷); ライジン: it drops to half instead of 0 and stays into the next turn
+    if (!this.status(pIdx, 'chainPersists')) {
+      if (this.status(pIdx, 'chainHalfCarry')) {
+        p.chain = Math.floor(p.chain / 2);
+        if (p.chain > 0) { p.flags.chainCarried = true; this.addLog(p.name + 'の連鎖数は半分の' + p.chain + 'が残った'); }
+      } else p.chain = 0;
+      this.emit('chain', { who: pIdx, chain: p.chain });
+    }
     // mana cleared (unless 天井なき空)
     if (!this.status(pIdx, 'manaPersists')) { p.mana = 0; this.emit('manaChange', { who: pIdx, mana: 0, delta: 0 }); }
     // phantoms vanish at the end of their owner's OPPONENT's turn — they attack on the owner's turn and stand
@@ -165,6 +182,7 @@
       octx.vanishPhantom(phs[i]); vanished++;
     }
     if (vanished) this.addLog(op.name + 'の幻影' + vanished + '体が消えた');
+    await this.flushVanish(); // 霧散の書・鏡の魔術師
     // end-of-turn buffs expire
     for (let i = 0; i < 2; i++) this.monstersOf(i).forEach(function (m) {
       m.buffs = m.buffs.filter(function (b) { return !(b.until && b.until.player === pIdx); });

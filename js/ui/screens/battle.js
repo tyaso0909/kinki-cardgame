@@ -346,9 +346,9 @@
       const legal = safe(() => g.canPlayCard(0, inst), { ok: false, reason: '' });
       const why = { uncastable: '普通には出せない', mana: 'マナが足りない', boardFull: '場がいっぱい', duplicateCrest: '同名の紋章がすでにある', cardsPerTurnLimit: 'このターンはもう使えない', sameNamePerTurnLimit: '同名カードは今ターン使えない', canPlay: '今は使えない', noGravePlay: '墓地から使えない' };
       const whyText = why[legal.reason] || '今は使えない';
-      S.sel = { uid: inst.uid, kind: 'hand', why: whyText };
-      // a hand effect (禁忌の竜) can be used even though the card can't be played
+      // a hand effect (禁忌の竜) or a grave effect (枯れない花の戦士) can be used even though the card can't be played
       const handAb = (S.abilities || []).find((a) => a.uid === inst.uid);
+      S.sel = { uid: inst.uid, kind: 'hand', why: handAb ? '効果を使える' : whyText };
       setPrompt(def.name + '：' + (handAb ? handAb.label + 'ことができる' : whyText), [
         handAb ? { label: handAb.label, cls: 'primary', onClick: () => { clearMode(); onAbilityTap(inst.uid); } } : null,
         { label: '詳細', cls: '', onClick: () => openDetail(inst.defId, inst.uid) },

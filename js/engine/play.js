@@ -319,6 +319,14 @@
     return { ok: true };
   };
 
+  // Which ability a card offers from where it is: hand → handAbility, grave → graveAbility, in play → ability.
+  Game.abilityOf = function (inst) {
+    const def = G.CardDB.get(inst.defId);
+    if (inst.zone === 'hand') return def.effects.handAbility || null;
+    if (inst.zone === 'grave') return def.effects.graveAbility || null;
+    return def.effects.ability || null;
+  };
+
   // ---- activated abilities (焚べ火の祭壇 "destroy any of my monsters", 巻き戻しの鐘 …) -------
   // CardDef.effects.ability = { label, oncePerTurn, canUse(ctx) → bool, targets: TargetSpec|null, use(ctx) }
   Game.prototype.getAbilities = function (pIdx) {
@@ -326,12 +334,14 @@
     const out = [];
     if (this.active !== pIdx || this.phase !== 'main' || this.winner !== null) return out;
     const self = this;
-    // hand cards may carry effects.handAbility (禁忌の竜: 手札にあるとき使える効果)
-    const sources = p.crests.concat(p.board, this.field && this.fieldOwner === pIdx ? [this.field] : [], p.hand);
+    // hand cards may carry effects.handAbility (禁忌の竜: 手札にあるとき使える効果);
+    // grave cards effects.graveAbility (枯れない花の戦士: 墓地から使う効果 — 封じの番兵 (noGravePlay) stops it)
+    const graveOk = !this.status(pIdx, 'noGravePlay');
+    const sources = p.crests.concat(p.board, this.field && this.fieldOwner === pIdx ? [this.field] : [], p.hand, graveOk ? p.grave : []);
     sources.forEach(function (inst) {
-      const def = G.CardDB.get(inst.defId);
-      const ab = inst.zone === 'hand' ? def.effects.handAbility : def.effects.ability;
+      const ab = Game.abilityOf(inst);
       if (!ab) return;
+      const def = G.CardDB.get(inst.defId);
       if (ab.oncePerTurn && inst.flags.abilityUsedTurn === self.turn) return;
       const ctx = self.makeCtx(pIdx, inst);
       if (ab.canUse && !ab.canUse(ctx)) return;
@@ -347,7 +357,7 @@
     const avail = this.getAbilities(pIdx).find(function (a) { return a.uid === sourceUid; });
     if (!inst || !avail) { this.emit('illegal', { action: 'ability', uid: sourceUid }); return { ok: false, reason: 'unavailable' }; }
     const def = G.CardDB.get(inst.defId);
-    const ab = inst.zone === 'hand' ? def.effects.handAbility : def.effects.ability;
+    const ab = Game.abilityOf(inst);
     const targets = this.resolveTargets([].concat(targetUids || []), def);
     if (ab.targets && !targets.length) return { ok: false, reason: 'needsTarget' };
     this.recordActionPre({ type: 'ability', defId: def.id, targets: targets.map(function (t) { return t.defId ? { defId: t.defId } : t; }) });
@@ -382,7 +392,18 @@
     }
   };
 
+  // Fire onPhantomVanished for every phantom that disappeared since the last flush (see ctx.vanishPhantom).
+  Game.prototype.flushVanish = async function () {
+    const q = this._vanishQueue;
+    while (q && q.length && this.winner === null) {
+      const ev = q.shift();
+      await this.trigger('onPhantomVanished', { card: ev.card, who: ev.who });
+    }
+    if (q && this.winner !== null) q.length = 0;
+  };
+
   Game.prototype.afterAction = async function () {
+    if (this.winner === null) await this.flushVanish();
     if (this.winner === null) await this.sweepDead();
     this.checkWin();
     if (this.winner === null) {

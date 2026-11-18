@@ -19,10 +19,12 @@
     spellCostDelta: 'sum', chainAtTurnStart: 'sum', initialHandDelta: 'sum', reserveLasts: 'max',
     extraCostAfterN: 'last', curseRedirectToMonsterUid: 'last', firstSpellStolenBy: 'last',
     handLimitDelta: 'sum', monsterAtkDelta: 'sum', atkPerHandCard: 'sum', curseShrink: 'sum',
-    dragonWard: 'or', phantomRush: 'or'
+    dragonWard: 'or', phantomRush: 'or', timedMultiplier: 'multiply',
+    // 2026-11 工房: 守護竜アーケン (dragons have 守護), スケルトンキング (all my monsters have 突進), ライジン (half the chain carries over)
+    dragonGuard: 'or', allCharge: 'or', chainHalfCarry: 'or'
   };
   const STATUS_DEFAULT = {
-    spellMultiplier: 1, summonMultiplier: 1, allEffectsMultiplier: 1, chainMultiplier: 1, timedTickRate: 1,
+    spellMultiplier: 1, summonMultiplier: 1, allEffectsMultiplier: 1, chainMultiplier: 1, timedTickRate: 1, timedMultiplier: 1,
     cardsPerTurnLimit: Infinity, sameNamePerTurnLimit: Infinity, maxBoard: Game.BOARD_CAP, drawPerTurn: 1,
     phantomAtkBonus: 0, phantomHpBonus: 0, sealWildBonus: 0, damageTakenDelta: 0, maxManaGainDelta: 0, costDelta: 0,
     spellCostDelta: 0, chainAtTurnStart: 0, initialHandDelta: 0,
@@ -229,6 +231,7 @@
     let n = 1;
     if (kind === 'spell') n = this.status(who, 'spellMultiplier') || 1;
     else if (kind === 'summon') n = this.status(who, 'summonMultiplier') || 1;
+    else if (kind === 'timed') n = this.status(who, 'timedMultiplier') || 1; // 年老いた大魔導士
     return Math.max(1, Math.round(n * all));
   };
 
@@ -368,6 +371,8 @@
     if ((inst.zone === 'board' || inst.zone === 'phantoms') && inst.owner !== undefined && this.players[inst.owner]) {
       if (this.isDragon(inst) && this.status(inst.owner, 'dragonWard')) add('ward');
       if (inst.isPhantom && this.status(inst.owner, 'phantomRush')) add('rush');
+      if (this.isDragon(inst) && this.status(inst.owner, 'dragonGuard')) add('guard');
+      if (this.status(inst.owner, 'allCharge')) add('charge');
     }
     return out;
   };
@@ -423,7 +428,8 @@
     const opp = this.players[1 - pIdx];
     // 不可侵 (untouchable): can't be attacked at all (and so never counts as a guard)
     const monsters = this.monstersOf(opp.idx).filter(function (m) { return m.keywords.indexOf('untouchable') < 0; });
-    const guards = monsters.filter(function (m) { return m.keywords.indexOf('guard') >= 0; });
+    const self = this;
+    const guards = monsters.filter(function (m) { return self.hasKeyword(m, 'guard'); }); // granted 守護 (守護竜アーケン) counts too
     if (guards.length) return guards.map(function (m) { return m.uid; });
     return monsters.map(function (m) { return m.uid; }).concat(['face']);
   };

@@ -48,7 +48,7 @@
     for (let k = 0; k < ids.length; k++) {
       const id = ids[k];
       const g = await T.sandbox({
-        p0: { hand: [id, 'copy_02', 'copy_05'], board: ['copy_02'], phantoms: ['copy_02'], mana: 20, deck: filler(8), grave: ['copy_05', 'copy_19'] },
+        p0: { hand: [id, 'copy_02', 'copy_05'], board: ['copy_02'], phantoms: ['copy_02', 'copy_02'], mana: 20, deck: filler(8), grave: ['copy_05', 'copy_19'] },
         p1: { board: ['copy_03'], hand: ['copy_05'], deck: filler(8), grave: ['copy_19', 'copy_06', 'accel_11'] }
       });
       g.players[1].lastSpellDefId = 'copy_19';
